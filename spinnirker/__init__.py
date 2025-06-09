@@ -20,6 +20,11 @@ from typing import List
 import nir
 import numpy as np
 
+from spinnirker._version import __version__  # NOQA
+from spinnirker._version import __version_name__  # NOQA
+from spinnirker._version import __version_month__  # NOQA
+from spinnirker._version import __version_year__  # NOQA
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -37,26 +42,6 @@ SPIKE_SOURCE_NODES = (nir.LIF, nir.IF, nir.CubaLIF, nir.Input)
 WEIGHT_NODES = (nir.Affine, nir.Conv2d, nir.Conv2d, nir.Linear)
 
 
-class IntegratorMethod(str, Enum):
-    FORWARD = "Forward-Euler"
-    EXPONENTIAL = "Exponential-Euler"
-
-
-class ResetMethod(str, Enum):
-    SUBTRACT = "subtract"  # subtract threshold
-    ZERO = "zero"  # reset voltage to zero
-
-
-def get_s2_reset_method(reset: ResetMethod):
-    """get SpiNNaker2 reset method string."""
-    if reset == ResetMethod.SUBTRACT:
-        return "reset_by_subtraction"
-    elif reset == ResetMethod.ZERO:
-        return "reset_to_v_reset"
-    else:
-        raise Exception("Unsupported ResetMethod")
-
-
 @dataclass
 class ConversionConfig:
     """NIR-to-SpiNNaker2-conversion configuration.
@@ -65,7 +50,7 @@ class ConversionConfig:
         dt: discretization timestep in seconds
         output_record: list of variables to record from output populations.
             Supported: ["spikes", "v"]. Default: `["spikes"]`.
-        conn_delay: connection delay in timesteps for creating :spinnaker2.snn.Projection:s.
+        conn_delay: connection delay in timesteps for creating Projections.
         scale_weights: if True, scale weights to maximum dynamic range [-127, 127],
             else don't scale weights
         weight_scale_percentile: Percentage value p used for percentile-based weight scaling.
@@ -74,17 +59,6 @@ class ConversionConfig:
             the maximum absolute weight (127) on the hardware.  All other
             weights are scaled by the same factor. Especially useful in case of
             outliers in the weights. Default: 100.
-        integrator: numerical integration method for SpiNNaker2. This affects how
-            parameters, especially time constants are translated to the SpiNNaker2
-            neuron models.
-            Available options:
-                `IntegratorMethod.EXPONENTIAL`: First-order exponential Euler (default)
-                `IntegratorMethod.FORWARD`: First-order forward Euler
-        reset: neuron reset mechanism for SpiNNaker2. This affects how the
-            membrane voltage is reset after a spike is detected.
-            Available options:
-                `ResetMethod.SUBTRACT`: subtract threshold from voltage (default)
-                `ResetMethod.ZERO`: reset voltage to 0.0
     """
 
     dt: float = 1.0
@@ -92,8 +66,6 @@ class ConversionConfig:
     conn_delay: int = 1
     scale_weights: bool = False
     weight_scale_percentile: float = 100
-    integrator: IntegratorMethod = IntegratorMethod.EXPONENTIAL
-    reset: ResetMethod = ResetMethod.SUBTRACT
 
 
 def add_output_to_node(node_name, nir_model, output_name):
@@ -127,10 +99,9 @@ def replace_sumpool2d_by_sumpool2d_if(nir_model):
     nodes_to_add = {}
     for name, node in nodes.items():
         if isinstance(node, nir.SumPool2d):
-            outgoing_nodes = get_outgoing_nodes(name, nir_model)
             edges = get_outgoing_edges(name, nir_model)
             old_edges = []
-            for edge_idx, edge in enumerate(edges):
+            for edge in edges:
                 if not isinstance(edge, (nir.LIF, nir.IF)):
                     old_edges.append(edge)
                     print("removing edge ", edge)
@@ -319,7 +290,7 @@ def convert_LIF(node: nir.NIRNode, bias: np.ndarray, config: ConversionConfig, w
         "threshold": node.v_threshold.flatten() * scale,
         "alpha_decay": alpha_decay,
         "i_offset": v_leak_factor * node.v_leak.flatten() * scale + bias.flatten() * w_scale,
-        "reset": get_s2_reset_method(config.reset),
+        "reset": get_reset_method(config.reset),
     }
     return neuron_params, scale
 
@@ -370,7 +341,7 @@ def convert_CubaLIF(node: nir.CubaLIF, bias: np.ndarray, config: ConversionConfi
         "exc_decay": syn_decay,
         "inh_decay": syn_decay,
         "i_offset": v_leak_factor * node.v_leak * scale + bias * node.w_in * I_scale * w_scale,
-        "reset": get_s2_reset_method(config.reset),
+        "reset": get_reset_method(config.reset),
         "t_refrac": 0,
         "v_reset": 0.0,  # will be ignored for `reset_by_subtraction`
     }
@@ -402,7 +373,7 @@ def convert_IF(node: nir.NIRNode, bias: np.ndarray, config: ConversionConfig, w_
         "threshold": node.v_threshold.flatten() * v_scale,
         "alpha_decay": 1.0,
         "i_offset": bias * w_scale,
-        "reset": get_s2_reset_method(config.reset),
+        "reset": get_reset_method(config.reset),
     }
     return neuron_params, v_scale
 
