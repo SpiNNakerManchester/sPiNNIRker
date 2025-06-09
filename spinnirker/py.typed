@@ -11,11 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
-[[tool.mypy.overrides]]
-module = ["nir", "pyNN.*", "quantities", "neo", "scipy", "scipy.*", "lazyarray", "matplotlib.*"]
-ignore_missing_imports = true
