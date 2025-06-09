@@ -29,6 +29,6 @@ jobs:
       coverage-package: spinnirker
       flake8-packages: spinnirker unittests spinnirker_integration_tests
       pylint-packages: spinnirker
-      mypy-packages:
+      mypy-packages: spynnirker
       mypy-full-packages: spinnirker unittests spinnirker_integration_tests
       cfg-file: spynnaker
