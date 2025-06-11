@@ -20,9 +20,20 @@ from nir import (
     NIRGraph, NIRNode, Affine, Conv1d, Conv2d, Linear, LIF, IF, CubaLIF, Input,
     Threshold)
 
+from spinnirker._version import __version__  # NOQA
+from spinnirker._version import __version_name__  # NOQA
+from spinnirker._version import __version_month__  # NOQA
+from spinnirker._version import __version_year__  # NOQA
+
+
 @dataclass(eq=False)
 class SubGraph():
+    """
+    This is a subgraph of the NIR graph, which contains the names of the
+    nodes in the subgraph.
+    """
     nodes: Set[str] = field(default_factory=set)
+
 
 def get_node_connection_maps(nir_model: NIRGraph) -> Tuple[
         Dict[str, List[str]], Dict[str, List[str]]]:
