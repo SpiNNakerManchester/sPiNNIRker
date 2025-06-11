@@ -14,7 +14,7 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict, Set, Type
 
 from nir import (
     NIRGraph, NIRNode, Affine, Conv1d, Conv2d, Linear, LIF, IF, CubaLIF, Input,
@@ -56,7 +56,9 @@ def get_node_connection_maps(nir_model: NIRGraph) -> Tuple[
 
 def split_graph(
         nir_model: NIRGraph,
-        outgoing_map: Dict[str, List[str]]) -> Set[SubGraph]:
+        outgoing_map: Dict[str, List[str]],
+        split_classes: Tuple[Type[NIRNode], ...] = (
+            Threshold, CubaLIF, LIF, IF)) -> Set[SubGraph]:
     """
     Split the NIR graph into subgraphs that communicate with each other
     only via a Threshold node i.e. a node that sends only 1 or 0 values (where
@@ -102,7 +104,7 @@ def split_graph(
 
                 # Push all target nodes to the node list
                 for target in outgoing_map[node]:
-                    if isinstance(nir_model.nodes[node], Threshold):
+                    if isinstance(nir_model.nodes[node], split_classes):
                         # If the current node is a Threshold node, create a new
                         # subgraph for the target
                         nodes.append((target, SubGraph()))
