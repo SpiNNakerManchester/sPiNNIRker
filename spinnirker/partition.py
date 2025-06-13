@@ -22,8 +22,8 @@ from nir import NIRGraph, NIRNode, LIF, IF, CubaLIF, Threshold
 @dataclass(eq=False)
 class SubGraph():
     """
-    This is a subgraph of the NIR graph, which contains the names of the
-    nodes in the subgraph.
+    This is a sub-graph of the NIR graph, which contains the names of the
+    nodes in the sub-graph.
     """
     nodes: Set[str] = field(default_factory=set)
 
@@ -54,20 +54,20 @@ def split_graph(
         split_classes: Tuple[Type[NIRNode], ...] = (
             Threshold, CubaLIF, LIF, IF)) -> Set[SubGraph]:
     """
-    Split the NIR graph into subgraphs that communicate with each other
+    Split the NIR graph into sub-graphs that communicate with each other
     only via a Threshold node i.e. a node that sends only 1 or 0 values (where
     sending a 0 is assumed to mean sending nothing here).  Note that this might
-    split the graph into a single subgraph.
+    split the graph into a single sub-graph.
 
     @param nir_model:
         The NIR graph model containing the nodes and edges
     @param outgoing_map:
         A map of nodes to lists of nodes that they target
     @return:
-        A list of the nodes in each subgraph
+        A list of the nodes in each sub-graph
     """
 
-    # Keep a list of subgraphs, and which node is in which graph
+    # Keep a list of sub-graphs, and which node is in which graph
     subgraph_nodes: Set[SubGraph] = set()
     node_subgraph_map: Dict[str, SubGraph] = dict()
 
@@ -77,11 +77,11 @@ def split_graph(
         first_subgraph: SubGraph = SubGraph()
 
         # Do a traversal starting at one node, and add nodes found to the
-        # current subgraph.
-        # When we hit a Threshold node, we create new subgraphs for each node
+        # current sub-graph.
+        # When we hit a Threshold node, we create new sub-graphs for each node
         # that the Threshold node targets.
-        # If we hit a node already in a separate subgraph, we merge the
-        # subgraphs together.
+        # If we hit a node already in a separate sub-graph, we merge the
+        # sub-graphs together.
         first_node: str = unvisited.pop()
         nodes: List[Tuple[str, SubGraph]] = [(first_node, first_subgraph)]
         while nodes:
@@ -90,31 +90,31 @@ def split_graph(
 
             # This is a new node so explore!
             if node not in node_subgraph_map:
-                # Add the node to the current subgraph
+                # Add the node to the current sub-graph
                 subgraph.nodes.add(node)
                 subgraph_nodes.add(subgraph)
-                # Mark the node as being in the current subgraph
+                # Mark the node as being in the current sub-graph
                 node_subgraph_map[node] = subgraph
 
                 # Push all target nodes to the node list
                 for target in outgoing_map[node]:
                     if isinstance(nir_model.nodes[node], split_classes):
                         # If the current node is a Threshold node, create a new
-                        # subgraph for the target
+                        # sub-graph for the target
                         nodes.append((target, SubGraph()))
                     else:
-                        # Otherwise just add it with the current subgraph
+                        # Otherwise just add it with the current sub-graph
                         nodes.append((target, subgraph))
 
-            # Otherwise check if the node is actually in a different subgraph
+            # Otherwise check if the node is actually in a different sub-graph
             # from the expected one
             elif node_subgraph_map[node] != subgraph:
-                # If it is different, merge the two subgraphs
+                # If it is different, merge the two sub-graphs
                 old_subgraph = node_subgraph_map[node]
                 for n in old_subgraph.nodes:
                     node_subgraph_map[n] = subgraph
                     subgraph.nodes.add(n)
-                # Remove the old subgraph from the list of subgraphs
+                # Remove the old sub-graph from the list of sub-graphs
                 subgraph_nodes.discard(old_subgraph)
                 subgraph_nodes.add(subgraph)
 
