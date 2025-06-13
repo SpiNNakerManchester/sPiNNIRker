@@ -22,7 +22,7 @@ def test_split_graph() -> None:
     # ↓         ↑
     # R5 → B6 → R7
     nir_graph = NIRGraph(
-        nodes = {
+        nodes={
             "R1": LI(array([0]), array([0]), array([0])),
             "B2": Threshold(array([0])),
             "R3": LI(array([0]), array([0]), array([0])),
@@ -31,7 +31,7 @@ def test_split_graph() -> None:
             "B6": Threshold(array([0])),
             "R7": LI(array([0]), array([0]), array([0]))
         },
-        edges = [
+        edges=[
             ("R1", "B2"),
             ("B2", "R3"),
             ("R3", "R4"),

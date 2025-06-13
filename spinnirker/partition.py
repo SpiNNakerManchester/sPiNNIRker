@@ -47,6 +47,7 @@ def get_node_connection_maps(nir_model: NIRGraph) -> Tuple[
         outgoing_map[source].append(target)
     return incoming_map, outgoing_map
 
+
 def split_graph(
         nir_model: NIRGraph,
         outgoing_map: Dict[str, List[str]],
