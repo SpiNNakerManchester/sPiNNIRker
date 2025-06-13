@@ -16,7 +16,7 @@ from spinnirker import get_node_connection_maps, split_graph, SubGraph
 from numpy import array
 
 
-def test_split_graph():
+def test_split_graph() -> None:
     # Test graph gets split correctly at the B2 and B6 Threshold nodes.
     # R1 → B2 → R3 → R4
     # ↓         ↑
