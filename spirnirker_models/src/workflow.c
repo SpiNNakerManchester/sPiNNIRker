@@ -71,11 +71,18 @@ bool configure_workflow(uint32_t n_components,
             return false;
         }
 
-        // Create the component copy data flags
-        output->copy_data = spin1_malloc(sizeof(bool) * next->n_inputs);
-        if (!output->copy_data) {
-            log_error("Failed to allocate %u copy data flags for component %u",
+        // Create the component copy data information
+        output->copy_data_size = spin1_malloc(
+                sizeof(uint32_t) * next->n_inputs);
+        if (!output->copy_data_size) {
+            log_error("Failed to allocate %u copy data size for component %u",
                     next->n_inputs, next->component_id);
+            return false;
+        }
+        output->data_to_copy = spin1_malloc(sizeof(void*) * next->n_inputs);
+        if (!output->data_to_copy) {
+            log_error("Failed to allocate %u data to copy pointers for "
+                    "component %u", next->n_inputs, next->component_id);
             return false;
         }
 
@@ -123,16 +130,22 @@ bool configure_workflow(uint32_t n_components,
             }
 
 
-            // If the component is a self-reference, copy the data first
             if (next_index == i) {
-                output->copy_data[j] = true;
-                uint32_t input_sz = input_size[i];
-                next_component->input[next_i] = spin1_malloc(
-                        sizeof(uint32_t) * input_sz);
+                // If the component is a self-reference, copy the data first
+                uint32_t input_sz = input_size[i] * sizeof(uint32_t);
+                output->copy_data_size[next_i] = input_sz;
+                output->data_to_copy[next_i] = output->output;
+                next_component->input[next_i] = spin1_malloc(input_sz);
+                if (!next_component->input[next_i]) {
+                    log_error("Failed to allocate %u bytes for self-reference "
+                            "input of component %u", input_sz, next_index);
+                    return false;
+                }
             } else {
-                output->copy_data[j] = false;
-
-                // Set the input pointer to the output of the previous component
+                // If the component is not a self-reference, just set the
+                // input pointer to the output of the previous component
+                output->copy_data_size[next_i] = 0;
+                output->data_to_copy[next_i] = NULL;
                 next_component->input[next_i] = output->output;
             }
         }
@@ -146,8 +159,16 @@ void run_workflow(uint32_t n_components,
     for (uint32_t i = 0; i < n_components; i++) {
         workflow_component_t *component = components[i];
         if (component && component->func) {
+            for (uint32_t j = 0; j < component->n_inputs; j++) {
+                if (component->copy_data_size[j]) {
+                    spin1_memcpy(component->input[j],
+                            component->data_to_copy[j],
+                            component->copy_data_size[j]);
+                }
+            }
+
             component->func(component->data, component->n_inputs,
-                    component->input,component->output);
+                    component->input, component->output);
         }
     }
 }

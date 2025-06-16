@@ -58,12 +58,15 @@ typedef struct {
     uint32_t n_inputs;
     //! Input data pointer(s)
     void **input;
-    //! For each input whether it needs to be copied before use or not
-    bool *copy_data;
+    //! For each input how much data to copy (0 for no copy)
+    uint32_t *copy_data_size;
+    //! Pointers to data to copy from the output to the input
+    void **data_to_copy;
     //! Output data pointer
     void *output;
 } workflow_component_t;
 
+//! The configuration of a component in a workflow.
 typedef struct {
     // The component to be executed in this step
     uint32_t component_id;
@@ -82,6 +85,21 @@ typedef struct {
     // The parameter data for this component follows
     // void params[];
 } workflow_component_config_t;
+
+//! The configuration of a workflow, which consists of multiple components.
+typedef struct {
+    //! Whether the output of the workflow is spikes
+    bool output_spikes;
+    //! Whether the output of the workflow is recorded or sent (only spikes)
+    bool output_recorded;
+    //! The base key to send spikes with if output_spikes is true and
+    //! output_recorded is false
+    uint32_t base_key;
+    //! The number of components in the workflow
+    uint32_t n_components;
+    //! The components in the workflow
+    workflow_component_config_t components[];
+} workflow_config_t;
 
 //! \brief Configures a set of workflow components based on the provided
 //!        configuration.
