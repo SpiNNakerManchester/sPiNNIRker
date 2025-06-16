@@ -1,4 +1,4 @@
-# Copyright (c) 2014 The University of Manchester
+# Copyright (c) 2025 The University of Manchester
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-/Debug
-/.cproject
-/.project
-/.settings/
-*modified_src/
-*builds/
-/html/
-/latex/
-*.tag
+APP = run_workflow
+SOURCES = workflow.c main.c
+
+include ../support.mk
+

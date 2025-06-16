@@ -18,6 +18,7 @@
 
 #include "workflow.h"
 #include <spin1_api.h>
+#include <debug.h>
 
 //! A list of components that can be used in a workflow
 component_t COMPONENTS[] = {
@@ -25,18 +26,29 @@ component_t COMPONENTS[] = {
 };
 #define N_COMPONENTS 0
 
-bool configure_workflow(uint32_t n_components,
-        workflow_component_config_t *config,
-        workflow_component_t **output_components) {
+bool configure_workflow(workflow_config_t *config, workflow_t **workflow) {
+    // Set up the workflow structure
+    *workflow = spin1_malloc(sizeof(workflow_t));
+    if (!*workflow) {
+        log_error("Failed to allocate workflow structure");
+        return false;
+    }
+    (*workflow)->n_components = config->n_components;
+    (*workflow)->output_spikes = config->output_spikes;
+    (*workflow)->output_recorded = config->output_recorded;
+    (*workflow)->base_key = config->base_key;
+    (*workflow)->input_spikes = config->input_spikes;
 
     // There will be the same number of components output as there are
     // configurations input; the only question will be how they are connected
-    *output_components = spin1_malloc(
+    uint32_t n_components = config->n_components;
+    workflow_component_t *output_components = spin1_malloc(
             sizeof(workflow_component_t) * n_components);
     if (!output_components) {
         log_error("Failed to allocate %u components", n_components);
         return false;
     }
+    (*workflow)->components = output_components;
 
     // Set up a list of pointers to keep the next components for later
     uint32_t *next_components[n_components];
@@ -45,7 +57,7 @@ bool configure_workflow(uint32_t n_components,
 
     // First loop through all the components and initialize them and their
     // input pointers.
-    workflow_component_config_t *next = config;
+    workflow_component_config_t *next = &config->components[0];
     for (uint32_t i = 0; i < n_components; i++) {
 
         // Find the component in the list
@@ -55,10 +67,10 @@ bool configure_workflow(uint32_t n_components,
             return false;
         }
         component_t *component = &COMPONENTS[next->component_id];
-        workflow_component_t *output = &(*output_components)[i];
+        workflow_component_t *output = &(output_components[i]);
 
         // Set up the component with parameters (data follows the struct)
-        void *params = &(next->next_components[next->n_inputs]);
+        uint32_t *params = &(next->next_components[next->n_inputs]);
         output->func = component->func;
         output->data = component->init(params);
 
@@ -100,7 +112,7 @@ bool configure_workflow(uint32_t n_components,
         next_components[i] = next->next_components;
         input_size[i] = next->input_size;
 
-        next = &params[next->param_size];
+        next = (void *) &params[next->param_size];
     }
 
     // Keep track of how many inputs of the component have been used
@@ -109,7 +121,7 @@ bool configure_workflow(uint32_t n_components,
     // Now go through and set up the output pointers using the previous
     // component lists
     for (uint32_t i = 0; i < n_components; i++) {
-        workflow_component_t *output = &(*output_components)[i];
+        workflow_component_t *output = &(output_components[i]);
 
         for (uint32_t j = 0; j < n_outputs[i]; j++) {
             uint32_t next_index = next_components[i][j];
@@ -119,7 +131,7 @@ bool configure_workflow(uint32_t n_components,
                 return false;
             }
             workflow_component_t *next_component =
-                    &(*output_components)[next_index];
+                    &(output_components[next_index]);
 
             uint32_t next_i = next_input[i]++;
             if (next_i >= next_component->n_inputs) {
@@ -154,10 +166,9 @@ bool configure_workflow(uint32_t n_components,
     return true;
 }
 
-void run_workflow(uint32_t n_components,
-        workflow_component_t *components) {
-    for (uint32_t i = 0; i < n_components; i++) {
-        workflow_component_t *component = components[i];
+void run_workflow(workflow_t *workflow) {
+    for (uint32_t i = 0; i < workflow->n_components; i++) {
+        workflow_component_t *component = &(workflow->components[i]);
         if (component && component->func) {
             for (uint32_t j = 0; j < component->n_inputs; j++) {
                 if (component->copy_data_size[j]) {

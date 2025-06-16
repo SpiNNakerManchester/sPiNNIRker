@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BUILDS = 
+BUILDS = run_workflow
 
 DIRS = $(BUILDS:%=makefiles/%)
 

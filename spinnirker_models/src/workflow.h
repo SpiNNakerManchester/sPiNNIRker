@@ -66,6 +66,22 @@ typedef struct {
     void *output;
 } workflow_component_t;
 
+typedef struct {
+    // Whether the input to the workflow is spikes
+    bool input_spikes;
+    //! Whether the output of the workflow is spikes
+    bool output_spikes;
+    //! Whether the output of the workflow is recorded or sent (only spikes)
+    bool output_recorded;
+    //! The base key to send spikes with if output_spikes is true and
+    //! output_recorded is false
+    uint32_t base_key;
+    //! The number of components in the workflow
+    uint32_t n_components;
+    //! The components in the workflow
+    workflow_component_t *components;
+} workflow_t;
+
 //! The configuration of a component in a workflow.
 typedef struct {
     // The component to be executed in this step
@@ -88,6 +104,8 @@ typedef struct {
 
 //! The configuration of a workflow, which consists of multiple components.
 typedef struct {
+    // Whether the input to the workflow is spikes
+    bool input_spikes;
     //! Whether the output of the workflow is spikes
     bool output_spikes;
     //! Whether the output of the workflow is recorded or sent (only spikes)
@@ -103,17 +121,13 @@ typedef struct {
 
 //! \brief Configures a set of workflow components based on the provided
 //!        configuration.
-//! \param[in] n_components: Number of components in the list
-//! \param[in] config: Pointer to start of the configuration data
-//! \param[out] output_components: Pointer to an array of configured components
+//! \param[in] config: Pointer to workflow configuration
+//! \param[out] workflow: Pointer to a configured workflow pointer
 //! \return True if the configuration was successful, false otherwise
-bool configure_workflow(uint32_t n_components,
-        workflow_component_config_t *config,
-        workflow_component_t **output_components);
+bool configure_workflow(workflow_config_t *config, workflow_t **workflow);
 
 //! \brief Runs a set of workflow components.  Note that the order is expected
 //!        to have been determined before this call, and that all inputs and
 //!        outputs are already allocated and mapped appropriately.
-//! \param n_components: Number of components in the workflow
-//! \param components: Array of workflow components to execute in order
-void run_workflow(uint32_t n_components, workflow_component_t *components);
+//! \param[in] workflow: Pointer to a configured workflow
+void run_workflow(workflow_t *workflow);
