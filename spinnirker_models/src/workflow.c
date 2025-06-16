@@ -172,5 +172,3 @@ void run_workflow(uint32_t n_components,
         }
     }
 }
-
-
