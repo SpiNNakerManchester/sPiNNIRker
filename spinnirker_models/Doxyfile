@@ -46,7 +46,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "sPyNNaker New Model Template c_models"
+PROJECT_NAME           = "sPiNNIRker C Models"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -1523,7 +1523,7 @@ TAGFILES               = sllt.tag=https://spinnakermanchester.github.io/spinnake
 # tag file that is based on the input files it reads. See section "Linking to
 # external documentation" for more information about the usage of tag files.
 
-GENERATE_TAGFILE       = html/spynnaker_new_model_template.tag
+GENERATE_TAGFILE       = html/spinnirker.tag
 
 # If the ALLEXTERNALS tag is set to YES all external class will be listed in the
 # class index. If set to NO only the inherited external classes will be listed.
