@@ -32,7 +32,7 @@ from .subgraph import SubGraph
 class WorkflowMachineVertex(
         MachineVertex, AbstractHasAssociatedBinary,
         AbstractGeneratesDataSpecification):
-    """ A machine vertex of a workflow subgraph.
+    """ A machine vertex of a workflow element.
     """
 
     __slots__ = []
