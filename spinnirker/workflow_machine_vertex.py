@@ -14,6 +14,8 @@
 
 from nir import NIRGraph
 
+from spinn_utilities.overrides import overrides
+
 from pacman.model.graphs.machine import MachineVertex
 from pacman.model.graphs.common import Slice
 from pacman.model.placements import Placement
@@ -35,7 +37,10 @@ class WorkflowMachineVertex(
     """ A machine vertex of a workflow element.
     """
 
-    __slots__ = ()
+    __slots__ = (
+        "__nir_model",
+        "__subgraph"
+    )
 
     def __init__(
             self, label: str, nir_model: NIRGraph, subgraph: SubGraph,
@@ -43,20 +48,26 @@ class WorkflowMachineVertex(
         MachineVertex.__init__(
             self, label=label, app_vertex=app_vertex,
             vertex_slice=vertex_slice)
+        self.__nir_model = nir_model
+        self.__subgraph = subgraph
 
     @property
+    @overrides(MachineVertex.sdram_required)
     def sdram_required(self) -> AbstractSDRAM:
         # TODO:
         return MachineVertex.sdram_required(self)
 
+    @overrides(AbstractHasAssociatedBinary.get_binary_file_name)
     def get_binary_file_name(self) -> str:
         # TODO: Determine if this needs to change depending on workflow
         # components
         return "run_workflow.aplx"
 
+    @overrides(AbstractHasAssociatedBinary.get_binary_start_type)
     def get_binary_start_type(self) -> ExecutableType:
         return ExecutableType.USES_SIMULATION_INTERFACE
 
+    @overrides(AbstractGeneratesDataSpecification.generate_data_specification)
     def generate_data_specification(
             self, spec: DataSpecificationGenerator,
             placement: Placement) -> None:

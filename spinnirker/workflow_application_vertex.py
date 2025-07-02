@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from spinn_utilities.overrides import overrides
+
 from pacman.model.graphs.application import ApplicationVertex
 
 
@@ -24,5 +26,6 @@ class WorkflowApplicationVertex(ApplicationVertex):
         ApplicationVertex.__init__(self, label=label)
 
     @property
-    def n_atoms(self):
+    @overrides(ApplicationVertex.n_atoms)
+    def n_atoms(self) -> int:
         return 0
