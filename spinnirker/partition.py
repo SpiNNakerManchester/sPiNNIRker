@@ -12,20 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import defaultdict
-from dataclasses import dataclass, field
 
 from typing import List, Tuple, Dict, Set, Type
 
 from nir import NIRGraph, NIRNode, LIF, IF, CubaLIF, Threshold
 
-
-@dataclass(eq=False)
-class SubGraph():
-    """
-    This is a sub-graph of the NIR graph, which contains the names of the
-    nodes in the sub-graph.
-    """
-    nodes: Set[str] = field(default_factory=set)
+from .subgraph import SubGraph
 
 
 def get_node_connection_maps(nir_model: NIRGraph) -> Tuple[
