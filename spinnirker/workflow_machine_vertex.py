@@ -35,7 +35,7 @@ class WorkflowMachineVertex(
     """ A machine vertex of a workflow element.
     """
 
-    __slots__ = []
+    __slots__ = ()
 
     def __init__(
             self, label: str, nir_model: NIRGraph, subgraph: SubGraph,

@@ -17,7 +17,8 @@ from pacman.model.graphs.application import ApplicationVertex
 class WorkflowApplicationVertex(ApplicationVertex):
     """ An application vertex of a workflow element.
     """
-    __slots__ = []
+
+    __slots__ = ()
 
     def __init__(self, label: str):
         ApplicationVertex.__init__(self, label=label)
