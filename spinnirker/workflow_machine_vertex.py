@@ -47,7 +47,7 @@ class WorkflowMachineVertex(
         # TODO:
         return MachineVertex.sdram_required(self)
 
-    def get_binary_file_name(self)->str:
+    def get_binary_file_name(self) -> str:
         # TODO: Determine if this needs to change depending on workflow
         # components
         return "run_workflow.aplx"
