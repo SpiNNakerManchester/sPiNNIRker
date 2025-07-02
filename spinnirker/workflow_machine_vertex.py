@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nir.ir.graph import NIRGraph
+from nir import NIRGraph
 
 from pacman.model.graphs.machine import MachineVertex
 from pacman.model.graphs.common import Slice
@@ -34,6 +34,8 @@ class WorkflowMachineVertex(
         AbstractGeneratesDataSpecification):
     """ A machine vertex of a workflow subgraph.
     """
+
+    __slots__ = []
 
     def __init__(
             self, label: str, nir_model: NIRGraph, subgraph: SubGraph,
