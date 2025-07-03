@@ -13,7 +13,9 @@
 # limitations under the License.
 from collections import defaultdict
 
-from typing import List, Tuple, Dict, Set, Type
+from typing import List, Tuple, Dict, Type
+
+from spinn_utilities.ordered_set import OrderedSet
 
 from nir import NIRGraph, NIRNode, LIF, IF, CubaLIF, Threshold
 
@@ -44,7 +46,7 @@ def split_graph(
         nir_model: NIRGraph,
         outgoing_map: Dict[str, List[str]],
         split_classes: Tuple[Type[NIRNode], ...] = (
-            Threshold, CubaLIF, LIF, IF)) -> Set[SubGraph]:
+            Threshold, CubaLIF, LIF, IF)) -> OrderedSet[SubGraph]:
     """
     Split the NIR graph into sub-graphs that communicate with each other
     only via a Threshold node i.e. a node that sends only 1 or 0 values (where
@@ -60,11 +62,11 @@ def split_graph(
     """
 
     # Keep a list of sub-graphs, and which node is in which graph
-    subgraph_nodes: Set[SubGraph] = set()
+    subgraph_nodes: OrderedSet[SubGraph] = OrderedSet()
     node_subgraph_map: Dict[str, SubGraph] = dict()
 
     # Start with list of unvisited nodes, to make sure we visit them all!
-    unvisited = set(outgoing_map.keys())
+    unvisited = OrderedSet(outgoing_map.keys())
     while unvisited:
         first_subgraph: SubGraph = SubGraph()
 
