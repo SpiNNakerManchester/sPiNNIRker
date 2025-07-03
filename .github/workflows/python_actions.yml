@@ -24,7 +24,6 @@ jobs:
     uses: SpiNNakerManchester/SupportScripts/.github/workflows/python_checks.yml@main
     with:
       dependencies: SpiNNUtils SpiNNMachine SpiNNMan PACMAN spalloc SpiNNFrontEndCommon TestBase
-      ubuntu-packages:
       test-directories: unittests
       coverage-package: spinnirker
       flake8-packages: spinnirker unittests spinnirker_integration_tests
