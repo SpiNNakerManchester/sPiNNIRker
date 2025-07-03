@@ -19,6 +19,6 @@ updates:
     schedule:
       interval: "weekly"
     assignees:
-      - "dkfellows"
+      - "rowleya"
     reviewers:
       - "rowleya"
