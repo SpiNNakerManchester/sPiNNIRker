@@ -45,11 +45,31 @@ class WorkflowMachineVertex(
     def __init__(
             self, label: str, nir_model: NIRGraph, subgraph: SubGraph,
             app_vertex: WorkflowApplicationVertex, vertex_slice: Slice):
+        """
+
+        :param label: The label of the machine vertex
+        :param nir_model: The model being executed
+        :param subgraph: The part of the model this node is executing
+        :param app_vertex: The application vertex this machine vertex is for
+        :param vertex_slice: The part of the part of the node being executed
+        """
         MachineVertex.__init__(
             self, label=label, app_vertex=app_vertex,
             vertex_slice=vertex_slice)
         self.__nir_model = nir_model
         self.__subgraph = subgraph
+
+    @property
+    def nir_model(self):
+        """ The model being executed
+        """
+        return self.__nir_model
+
+    @property
+    def subgraph(self):
+        """ The part of the model this node is executing
+        """
+        return self.__subgraph
 
     @property
     @overrides(MachineVertex.sdram_required)

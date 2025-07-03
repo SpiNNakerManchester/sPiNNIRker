@@ -23,6 +23,10 @@ class WorkflowApplicationVertex(ApplicationVertex):
     __slots__ = ()
 
     def __init__(self, label: str):
+        """
+
+        :param label: The label of the vertex
+        """
         ApplicationVertex.__init__(self, label=label)
 
     @property
