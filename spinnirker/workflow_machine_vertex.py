@@ -61,13 +61,13 @@ class WorkflowMachineVertex(
 
     @property
     def nir_model(self):
-        """ The model being executed
+        """ :return: The model being executed
         """
         return self.__nir_model
 
     @property
     def subgraph(self):
-        """ The part of the model this node is executing
+        """ :return: The part of the model this node is executing
         """
         return self.__subgraph
 
