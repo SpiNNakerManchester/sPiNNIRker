@@ -77,9 +77,6 @@ intersphinx_mapping = {
     'spinn_front_end_common': (
         'https://spinnfrontendcommon.readthedocs.io/en/'
         f'{spinnaker_doc_version}/', None)
-    'spynnaker': (
-        'https://spynnaker.readthedocs.io/en/'
-        f'{spinnaker_doc_version}/', None)
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -404,7 +401,7 @@ if _on_rtd:
 # Automatically called by sphinx at startup
 def setup(app):
     # NB: extra dot at end is deliberate!
-    trim = ("spinnirker.", "spynnaker.", "spinn_front_end_common.", "pacman.",
+    trim = ("spinnirker.", "spinn_front_end_common.", "pacman.",
             "spinnman.", "spinn_machine.", "data_specification.",
             "spinn_utilities.")
 
@@ -436,7 +433,7 @@ def excluded_because_in_init(base):
 
 
 _output_dir = os.path.abspath(".")
-_package_base = "spynnaker"
+_package_base = "spinnirker"
 
 # Do the rst generation; remove files which aren't in git first!
 for fl in os.listdir("."):

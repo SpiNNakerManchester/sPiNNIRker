@@ -15,19 +15,16 @@
 * limitations under the License.
 * @endcond
 *
-* @mainpage sPyNNaker New Model Template
+* @mainpage SpiNNIRker Models
 *
 * @section intro Introduction
 *
-* This is a template for new neuron models to be added to the sPyNNaker software.
+* This is the SpiNNaker implementation of NIR.
 *
-* This is the documentation of the part of the new model template, implemented in C, that
+* This is the documentation of the part of the NIR implementation, implemented in C, that
 * is actually deployed onto SpiNNaker to execute. The
-* [Python parts](https://spinnakernewmodeltemplate.readthedocs.io/)
+* [Python parts](https://spinnirker.readthedocs.io/)
 * of the template  are responsible for the user interface, data
 * preparation, execution planning, and runtime control.
-*
-* Note that this code depends on
-* [sPyNNaker neural_modelling](https://spynnaker.readthedocs.io/)
 *
 */

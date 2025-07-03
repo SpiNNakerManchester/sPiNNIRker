@@ -18,7 +18,6 @@ import spinn_machine
 import pacman
 import spinnman
 import spinn_front_end_common
-import spynnaker
 import spinnirker
 
 
@@ -35,7 +34,6 @@ class Test(unittest.TestCase):
         spinnman_parts = spinnman.__version__.split('.')
         spinn_front_end_common_parts = spinn_front_end_common.__version__\
             .split('.')
-        spynnaker_parts = spynnaker.__version__.split('.')
         spinnirker_parts = spinnirker.__version__.split('.')
 
         self.assertEqual(spinn_utilities_parts[0],
@@ -61,9 +59,4 @@ class Test(unittest.TestCase):
         self.assertEqual(spinn_front_end_common_parts[0],
                          spinnirker_parts[0])
         self.assertLessEqual(spinn_front_end_common_parts[1],
-                             spinnirker_parts[1])
-
-        self.assertEqual(spynnaker_parts[0],
-                         spinnirker_parts[0])
-        self.assertLessEqual(spynnaker_parts[1],
                              spinnirker_parts[1])

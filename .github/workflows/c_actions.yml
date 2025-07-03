@@ -104,17 +104,16 @@ jobs:
       with:
         install-dependencies: >
           SpiNNUtils SpiNNMachine SpiNNMan PACMAN spalloc
-          SpiNNFrontEndCommon sPyNNaker TestBase
+          SpiNNFrontEndCommon TestBase
         install-module: true
         install-check-tools: false
-        ubuntu-packages: graphviz
-        cfg-file: spynnaker
+        cfg-file: spinnirker
 
     - name: Download Fec binaries
       uses: actions/download-artifact@v4
       with:
         name: fec_binaries
-        # Need to go into spynnaker as FEC will have been moved by install
+        # Need to go into spinnirker as FEC will have been moved by install
         path: external_binaries
 
     - name: Download SpiNNIRker Binaries
@@ -132,6 +131,6 @@ jobs:
     - name: Append cfg
       # Doing this in the prepare action ended with a different path
       run: |
-        echo '[Mapping]' >> ~/.spynnaker.cfg
-        echo "external_binaries=$PWD/external_binaries" >> ~/.spynnaker.cfg
-        cat ~/.spynnaker.cfg
+        echo '[Mapping]' >> ~/.spinnirker.cfg
+        echo "external_binaries=$PWD/external_binaries" >> ~/.spinnirker.cfg
+        cat ~/.spinnirker.cfg

@@ -23,12 +23,11 @@ jobs:
   call:
     uses: SpiNNakerManchester/SupportScripts/.github/workflows/python_checks.yml@main
     with:
-      dependencies: SpiNNUtils SpiNNMachine SpiNNMan PACMAN spalloc SpiNNFrontEndCommon sPyNNaker TestBase
+      dependencies: SpiNNUtils SpiNNMachine SpiNNMan PACMAN spalloc SpiNNFrontEndCommon TestBase
       ubuntu-packages:
       test-directories: unittests
       coverage-package: spinnirker
       flake8-packages: spinnirker unittests spinnirker_integration_tests
       pylint-packages: spinnirker
-      mypy-packages: spinnirker
       mypy-full-packages: spinnirker unittests spinnirker_integration_tests
-      cfg-file: spynnaker
+      cfg-file: spinnirker

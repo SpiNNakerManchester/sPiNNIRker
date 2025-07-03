@@ -25,7 +25,6 @@ man="../SpiNNMan/spinnman"
 pacman="../PACMAN/pacman"
 spalloc="../spalloc/spalloc_client"
 fec="../SpiNNFrontEndCommon/spinn_front_end_common"
-spynnaker="../sPyNNaker/spynnaker"
 test_base="../TestBase/spinnaker_testbase"
 
-mypy --python-version 3.8 $utils $machine $man $pacman $spalloc $fec $spynnaker $test_base spinnirker unittests spinnirker_integration_tests
+mypy $utils $machine $man $pacman $spalloc $fec $test_base spinnirker unittests spinnirker_integration_tests
