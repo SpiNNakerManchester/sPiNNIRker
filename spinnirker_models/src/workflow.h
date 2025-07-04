@@ -1,5 +1,3 @@
-// DO NOT EDIT! THIS FILE WAS GENERATED FROM ../../src/workflow.h
-
 /*
  Copyright (c) 2025 The University of Manchester
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,35 +17,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <bit_field.h>
+#include "component.h"
 
-//! \brief Defines a function type for components in a workflow.
-//! Note no input is the same as the output.
-//! \param[in] data: Pointer to the workflow data structure that holds
-//!                  the state and configuration for the workflow
-//! @param[in] n_inputs: Number of input data pointers for the component
-//! \param[in] input: Pointer to input data for the component
-//! \param[out] output: Pointer to output data for the component
-typedef void (*component_func)(void *data, uint32_t n_inputs, void **input,
-        void *output);
-
-//! \brief Defines a function type for initializing components in a workflow
-//! \param[in] params: Pointer to parameters for the component
-//! \return Pointer to the initialized component data structure
-typedef void* (*component_init)(void *params);
-
-//! \brief Defines a function type for deinitializing components in a workflow
-//! \param[in] data: Pointer to the component data structure to be deinitialized
-typedef void (*component_deinit)(void *data);
-
-//! A component that could be used in a workflow.
-typedef struct {
-    //! Function to call for this component
-    component_func func;
-    //! Function to call to initialize this component
-    component_init init;
-    //! Function to call to deinitialize this component
-    component_deinit deinit;
-} component_t;
 
 //! Information about the key and mask for a spike input
 typedef struct {

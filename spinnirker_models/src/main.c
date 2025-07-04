@@ -16,9 +16,9 @@
 
 /**
  * \dir
- * \brief Implementation of the synapse expander and delay expander
+ * \brief Implementation of the execution of a workflow.
  * \file
- * \brief The synapse expander for neuron cores
+ * \brief The main entry point for the workflow execution.
  */
 #include "workflow.h"
 

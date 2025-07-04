@@ -13,7 +13,7 @@
 # limitations under the License.
 
 APP = run_workflow
-SOURCES = workflow.c main.c
+SOURCES = workflow.c main.c node_impls/input.c
 
 include ../support.mk
 

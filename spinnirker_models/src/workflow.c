@@ -16,15 +16,18 @@
 //! \file workflow.h
 //! \brief Workflow execution
 
-#include "workflow.h"
 #include <spin1_api.h>
 #include <debug.h>
 
-//! A list of components that can be used in a workflow
-static const component_t COMPONENTS[] = {
+#include "workflow.h"
+#include "node_impls/input.h"
 
+
+//! A list of components that can be used in a workflow
+static const component_t *COMPONENTS[] = {
+    &input,
 };
-#define N_COMPONENTS 0
+#define N_COMPONENTS 1
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure
@@ -88,7 +91,7 @@ static bool setup_components(uint32_t n_components,
         }
 
         // Set up the component with parameters (data follows the struct)
-        const component_t *component = &COMPONENTS[configs[i]->component_id];
+        const component_t *component = COMPONENTS[configs[i]->component_id];
         components[i].func = component->func;
         components[i].data = component->init(params);
 
