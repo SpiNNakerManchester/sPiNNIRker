@@ -15,6 +15,9 @@
 //! \brief Input NIR component implementation
 
 #include "input.h"
+#include <arm_acle.h>
+#include <spin1_api.h>
+#include <debug.h>
 
 //! The configuration passed to the input component
 typedef struct {
@@ -33,21 +36,43 @@ typedef struct {
     uint32_t *data;
 } input_data_t;
 
-static void input_exec(void *data, uint32_t n_inputs, void **input, void *output) {
-    // TODO: Fill in
+static void* input_init(void *params) {
+    // Cast the parameters to the input configuration
+    input_config_t *config = (input_config_t *) params;
+
+    input_data_t *input_data = spin1_malloc(sizeof(input_data_t));
+    if (!input_data) {
+        log_error("Failed to allocate input data structure");
+        return (void *) 0;
+    }
+
+    input_data->time = 0;
+    input_data->words_per_time_step = config->words_per_time_step;
+    input_data->data = config->data;
+
+    return input_data;
 }
 
-static void* input_init(void *params) {
-    // TODO: Fill in
-    return (void *) 0;
+static void input_exec(void *data, UNUSED uint32_t n_inputs, UNUSED void **input,
+        void *output) {
+
+    // Get the input data structure
+    input_data_t *input_data = data;
+
+    // TODO: Could we do this with a DMA?  Could be potential interference with
+    // other DMAs in progress...
+    spin1_memcpy(output,
+            &input_data->data[input_data->time * input_data->words_per_time_step],
+            input_data->words_per_time_step * sizeof(uint32_t));
+    input_data->time++;
 }
 
 static void input_deinit(void *data) {
-    // TODO: Fill in
+    sark_free(data);
 }
 
 const component_t input = {
-    .func = input_exec,
     .init = input_init,
+    .func = input_exec,
     .deinit = input_deinit
 };
