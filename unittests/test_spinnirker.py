@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from nir import NIRGraph, LI, Threshold, Input
+from nir import NIRGraph, LI, Threshold, Input, Output
 from spinnirker import get_node_connection_maps, split_graph, SubGraph
 from numpy import array
 
@@ -30,7 +30,8 @@ def test_split_graph() -> None:
             "R4": LI(array([0]), array([0]), array([0])),
             "R5": LI(array([0]), array([0]), array([0])),
             "B6": Threshold(array([0])),
-            "R7": LI(array([0]), array([0]), array([0]))
+            "R7": LI(array([0]), array([0]), array([0])),
+            "O4": Output(array([1]))
         },
         edges=[
             ("I1", "R1"),
@@ -40,7 +41,8 @@ def test_split_graph() -> None:
             ("R1", "R5"),
             ("R5", "B6"),
             ("B6", "R7"),
-            ("R7", "R3")
+            ("R7", "R3"),
+            ("R4", "O4")
         ]
     )
 
@@ -51,4 +53,4 @@ def test_split_graph() -> None:
     for subgraph in subgraphs:
         assert isinstance(subgraph, SubGraph)
         assert subgraph.nodes in (
-            {"I1", "R1", "B2", "R5", "B6"}, {"R3", "R4", "R7"})
+            {"I1", "R1", "B2", "R5", "B6"}, {"R3", "R4", "R7", "O4"})
