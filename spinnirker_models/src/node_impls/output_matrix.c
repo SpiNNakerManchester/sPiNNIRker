@@ -11,10 +11,11 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-//! \file output.c
-//! \brief Output NIR component implementation
+//! \file output_matrix.c
+//! \brief Output NIR component implementation - with matrix inputs
 
-#include "output.h"
+#include "output_matrix.h"
+
 #include <arm_acle.h>
 #include <spin1_api.h>
 #include <debug.h>
@@ -25,7 +26,7 @@ typedef struct {
     uint32_t words_per_input;
     //! The data itself
     uint32_t data[];
-} output_config_t;
+} output_matrix_config_t;
 
 typedef struct {
     //! The time of the component
@@ -34,13 +35,13 @@ typedef struct {
     uint32_t words_per_input;
     //! A pointer to the data to receive the transfer
     uint32_t *data;
-} output_data_t;
+} output_matrix_data_t;
 
-static void* output_init(void *params) {
+static void* output_matrix_init(void *params) {
     // Cast the parameters to the input configuration
-    output_config_t *config = (output_config_t *) params;
+    output_matrix_config_t *config = (output_matrix_config_t *) params;
 
-    output_data_t *output_data = spin1_malloc(sizeof(output_data_t));
+    output_matrix_data_t *output_data = spin1_malloc(sizeof(output_matrix_data_t));
     if (!output_data) {
         log_error("Failed to allocate input data structure");
         return (void *) 0;
@@ -53,30 +54,31 @@ static void* output_init(void *params) {
     return output_data;
 }
 
-static void output_exec(void *data, uint32_t n_inputs, void **input,
-        UNUSED void *output) {
+static void output_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
+        UNUSED data_t output) {
 
     // Get the output data structure
-    output_data_t *output_data = data;
+    output_matrix_data_t *output_data = data;
 
     // TODO: Could we do this with a DMA?  Could be potential interference with
     // other DMAs in progress...
+    // Base position in output data array is the position after all time steps
+    // so far
+    uint32_t base_pos = output_data->time * output_data->words_per_input * n_inputs;
+    uint32_t size = output_data->words_per_input * sizeof(uint32_t);
     for (uint32_t input_index = 0; input_index < n_inputs; input_index++) {
-        spin1_memcpy(
-            &output_data->data[
-                output_data->time * output_data->words_per_input * input_index],
-            input[input_index],
-            output_data->words_per_input * sizeof(uint32_t));
+        uint32_t pos = base_pos + (output_data->words_per_input * input_index);
+        spin1_memcpy(&output_data->data[pos], input[input_index].data, size);
     }
     output_data->time++;
 }
 
-static void output_deinit(void *data) {
+static void output_matrix_deinit(void *data) {
     sark_free(data);
 }
 
-const component_t output = {
-    .init = output_init,
-    .func = output_exec,
-    .deinit = output_deinit
+const component_t output_matrix = {
+    .init = output_matrix_init,
+    .func = output_matrix_exec,
+    .deinit = output_matrix_deinit
 };

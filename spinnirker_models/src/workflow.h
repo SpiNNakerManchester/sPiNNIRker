@@ -36,20 +36,6 @@ typedef struct {
     uint32_t n_per_core;
 } key_info_t;
 
-typedef struct {
-    // The source ID of the spike
-    uint32_t global_source_id: 28;
-    // The delay of the spike in reaching this core from the source core
-    uint32_t delay: 4;
-} spike_t;
-
-typedef struct {
-    //! The number of spikes in the list
-    uint32_t n_spikes;
-    //! The spikes in the list
-    spike_t spikes[];
-} spike_list_t;
-
 //! An input that receives spikes.
 typedef struct {
     //! Information about the key and mask for the spike input
@@ -98,18 +84,18 @@ typedef struct {
     void *data;
     //! The number of inputs to this component
     uint32_t n_inputs;
-    //! Input data pointer(s)
-    void **input;
+    //! Input data
+    data_t *input;
     //! For each input how much data to copy (0 for no copy)
     uint32_t *copy_data_size;
-    //! Pointers to data to copy to the input
+    //! Pointers to data to copy to the input data pointers
     void **data_to_copy;
     //! The number of DMAs needed before starting this component
     uint32_t n_input_dmas_needed;
     //! The number of DMAs done before starting this component
     uint32_t n_input_dmas_done;
     //! Output data pointer
-    void *output;
+    data_t output;
 } workflow_component_t;
 
 typedef struct {
@@ -195,9 +181,12 @@ typedef struct {
     uint32_t param_size;
     // The number of inputs to this component
     uint32_t n_inputs;
+    // The type of the output
+    data_type_t output_type;
     // The number of outputs from this component
     uint32_t n_outputs;
     // The indices of the next components that this component feeds into
+    // (length n_outputs)
     uint32_t outputs[];
     // The parameter data for this component follows; this has undefined length
     // void params[];

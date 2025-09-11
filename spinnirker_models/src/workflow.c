@@ -21,13 +21,13 @@
 
 #include "workflow.h"
 #include "node_impls/input.h"
-#include "node_impls/output.h"
+#include "node_impls/output_matrix.h"
 
 
 //! A list of components that can be used in a workflow
 static const component_t *COMPONENTS[] = {
     &input,
-    &output,
+    &output_matrix,
 };
 #define N_COMPONENTS 2
 
@@ -103,7 +103,7 @@ static bool setup_components(uint32_t n_components,
         // pointers to another component's output.  This will be set up later.
         uint32_t n_inputs = configs[i]->n_inputs;
         components[i].n_inputs = n_inputs;
-        components[i].input = spin1_malloc(sizeof(void *) * n_inputs);
+        components[i].input = spin1_malloc(sizeof(data_t) * n_inputs);
         if (!components[i].input) {
             log_error("Failed to allocate %u input pointers for component %u",
                     n_inputs, i);
@@ -118,7 +118,7 @@ static bool setup_components(uint32_t n_components,
                     n_inputs, i);
             return false;
         }
-        components[i].data_to_copy = spin1_malloc(sizeof(void*) * n_inputs);
+        components[i].data_to_copy = spin1_malloc(sizeof(void *) * n_inputs);
         if (!components[i].data_to_copy) {
             log_error("Failed to allocate %u data to copy pointers for "
                     "component %u", n_inputs, i);
@@ -130,13 +130,16 @@ static bool setup_components(uint32_t n_components,
         components[i].n_input_dmas_done = 0;
 
         // Create the component output pointer
-        components[i].output = spin1_malloc(
-                sizeof(uint32_t) * configs[i]->output_size);
-        if (!components[i].output) {
+        components[i].output.data = spin1_malloc(
+                sizeof(data_t) + (sizeof(uint32_t) * configs[i]->output_size));
+        if (!components[i].output.data) {
             log_error("Failed to allocate %u words of output data for "
                     "component %u", configs[i]->output_size, i);
             return false;
         }
+
+        // Set the type of the output now too
+        components[i].output.type = configs[i]->output_type;
     }
     return true;
 }
@@ -144,7 +147,7 @@ static bool setup_components(uint32_t n_components,
 static bool setup_targets(uint32_t n_targets, uint32_t *target_indices,
         void *input_data, workflow_t *workflow,
         workflow_component_config_t **configs, uint32_t *next_inputs,
-        uint32_t expected_input_size, bool is_sdram) {
+        uint32_t expected_input_size, bool is_sdram, data_type_t data_type) {
     for (uint32_t j = 0; j < n_targets; j++) {
         uint32_t target_index = target_indices[j];
         if (target_index >= workflow->n_components) {
@@ -169,7 +172,8 @@ static bool setup_targets(uint32_t n_targets, uint32_t *target_indices,
                     expected_input_size, target_index, config->input_size);
             return false;
         }
-        component->input[input_index] = input_data;
+        component->input[input_index].type = data_type;
+        component->input[input_index].data = input_data;
 
         if (is_sdram) {
             component->n_input_dmas_needed++;
@@ -204,7 +208,7 @@ static bool setup_spike_inputs(uint32_t n_spike_inputs,
         uint32_t expected_size = input->max_spikes + 1;
         if (!setup_targets(config->n_targets, config->target_components,
                 input->spikes, workflow, configs, next_inputs, expected_size,
-                false)) {
+                false, DATA_TYPE_SPIKES)) {
             return false;
         }
         input->max_spikes = config->max_spikes;
@@ -232,7 +236,7 @@ static bool setup_sdram_inputs(uint32_t n_sdram_inputs,
     for (uint32_t i = 0; i < n_sdram_inputs; i++) {
         sdram_input_t *input = &workflow->sdram_inputs[i];
         sdram_input_config_t *config = &sdram_inputs[i];
-        input->address = (void *) config->address;
+        input->address = (data_t *) config->address;
         input->size_in_bytes = config->size_in_bytes;
         input->local_data = spin1_malloc(input->size_in_bytes);
         if (!input->local_data) {
@@ -254,7 +258,8 @@ static bool setup_sdram_inputs(uint32_t n_sdram_inputs,
                 target_bytes);
 
         if (!setup_targets(config->n_targets, config->target_components,
-                input->local_data, workflow, configs, next_inputs, 0, true)) {
+                input->local_data, workflow, configs, next_inputs, 0, true,
+                DATA_TYPE_MATRIX)) {
             return false;
         }
     }
@@ -314,19 +319,21 @@ static bool setup_outputs(uint32_t n_components, workflow_t *workflow,
                 // If the component is a self-reference, copy the data first
                 uint32_t input_sz = config->input_size * sizeof(uint32_t);
                 target->copy_data_size[input] = input_sz;
-                target->data_to_copy[input] = component->output;
-                target->input[input] = spin1_malloc(input_sz);
-                if (!target->input[input]) {
+                target->data_to_copy[input] = component->output.data;
+                target->input[input].data = spin1_malloc(input_sz);
+                if (!target->input[input].data) {
                     log_error("Failed to allocate %u bytes for self-reference "
                             "input of component %u", input_sz, next_index);
                     return false;
                 }
+                target->input[input].type = component->output.type;
             } else {
                 // If the component is not a self-reference, just set the
                 // input pointer to the output of the previous component
                 target->copy_data_size[input] = 0;
                 target->data_to_copy[input] = NULL;
-                target->input[input] = component->output;
+                target->input[input].data = component->output.data;
+                target->input[input].type = component->output.type;
             }
         }
     }
@@ -479,7 +486,7 @@ static void setup_write_dma(workflow_t *workflow) {
     sdram_output_t *output = &workflow->sdram_outputs[next_output];
     workflow_component_t *component =
             &workflow->components[output->component_index];
-    spin1_dma_transfer(0, output->address, component->output, DMA_WRITE,
+    spin1_dma_transfer(0, output->address, component->output.data, DMA_WRITE,
             output->size_in_bytes);
 }
 
@@ -566,7 +573,7 @@ void run_workflow(workflow_t *workflow) {
     // Copy any inputs that we need to copy (in case of self-loops)
     for (uint32_t j = 0; j < component->n_inputs; j++) {
         if (component->copy_data_size[j]) {
-            spin1_memcpy(component->input[j],
+            spin1_memcpy(component->input[j].data,
                     component->data_to_copy[j],
                     component->copy_data_size[j]);
         }

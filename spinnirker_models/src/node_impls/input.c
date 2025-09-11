@@ -19,26 +19,21 @@
 #include <spin1_api.h>
 #include <debug.h>
 
-//! The configuration passed to the input component
 typedef struct {
-    //! How many words to be transferred from the data per timestep
-    uint32_t words_per_time_step;
-    //! The data itself
-    uint32_t data[];
-} input_config_t;
+    uint32_t n_words;
+    uint32_t words[];
+} next_data_t;
 
 typedef struct {
     //! The time of the component
     uint32_t time;
-    //! How many words to be transferred from the data per timestep
-    uint32_t words_per_time_step;
     //! A pointer to the next data to be transferred
-    uint32_t *data;
+    next_data_t *data;
 } input_data_t;
 
 static void* input_init(void *params) {
     // Cast the parameters to the input configuration
-    input_config_t *config = (input_config_t *) params;
+    next_data_t *config = (next_data_t *) params;
 
     input_data_t *input_data = spin1_malloc(sizeof(input_data_t));
     if (!input_data) {
@@ -47,24 +42,25 @@ static void* input_init(void *params) {
     }
 
     input_data->time = 0;
-    input_data->words_per_time_step = config->words_per_time_step;
-    input_data->data = config->data;
+    input_data->data = config;
 
     return input_data;
 }
 
-static void input_exec(void *data, UNUSED uint32_t n_inputs, UNUSED void **input,
-        void *output) {
+static void input_exec(void *data, UNUSED uint32_t n_inputs, UNUSED data_t *input,
+        data_t output) {
 
     // Get the input data structure
     input_data_t *input_data = data;
 
     // TODO: Could we do this with a DMA?  Could be potential interference with
     // other DMAs in progress...
-    spin1_memcpy(output,
-            &input_data->data[input_data->time * input_data->words_per_time_step],
-            input_data->words_per_time_step * sizeof(uint32_t));
+    uint32_t n_words = input_data->data->n_words;
+    spin1_memcpy(output.data, input_data->data, n_words * sizeof(uint32_t));
+
+    // Move to next data and time
     input_data->time++;
+    input_data->data = (next_data_t *) &input_data->data->words[n_words];
 }
 
 static void input_deinit(void *data) {

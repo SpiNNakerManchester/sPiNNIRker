@@ -16,4 +16,4 @@
 
 #include "../component.h"
 
-extern const component_t output;
+extern const component_t output_matrix;
