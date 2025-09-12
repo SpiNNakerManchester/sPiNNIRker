@@ -47,6 +47,20 @@ typedef struct {
     void *data;
 } data_t;
 
+//! \brief A union that can be used to identify a DMA operation
+typedef union {
+    //! The ID of the DMA operation
+    uint32_t id;
+    struct {
+        //! The index of the element / component this is a transfer for
+        uint32_t index: 30;
+        //! Whether this is for a component (1) or an input/output (0)
+        uint32_t is_component: 1;
+        //! Whether this is an input (1) or output (0)
+        uint32_t is_input: 1;
+    };
+} dma_id_t;
+
 //! \brief Defines a function type for components in a workflow.
 //! Note no input is the same as the output.
 //! \param[in] data: Pointer to the workflow data structure that holds
@@ -58,13 +72,19 @@ typedef void (*component_func)(void *data, uint32_t n_inputs, data_t *input,
         data_t output);
 
 //! \brief Defines a function type for initializing components in a workflow
+//! \param[in] index: The index of the component in the workflow
 //! \param[in] params: Pointer to parameters for the component
 //! \return Pointer to the initialized component data structure
-typedef void* (*component_init)(void *params);
+typedef void* (*component_init)(uint32_t index, void *params);
 
 //! \brief Defines a function type for deinitializing components in a workflow
 //! \param[in] data: Pointer to the component data structure to be deinitialized
 typedef void (*component_deinit)(void *data);
+
+//! \brief Defines a function type for handling DMA completion for a component
+//! \param[in] tag: The DMA ID tag that has completed
+//! \param[in] data: Pointer to the component data structure
+typedef void (*component_dma_complete)(dma_id_t tag, void *data);
 
 //! A component that could be used in a workflow.
 typedef struct {
@@ -74,6 +94,8 @@ typedef struct {
     component_init init;
     //! Function to call to deinitialize this component
     component_deinit deinit;
+    //! Function to call when a DMA is complete for this component (can be NULL)
+    component_dma_complete dma_complete;
 } component_t;
 
 #endif // __component_h__

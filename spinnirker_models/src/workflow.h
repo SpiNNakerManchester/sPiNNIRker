@@ -78,8 +78,10 @@ typedef struct {
 
 //! A component in a workflow
 typedef struct {
-    //! Function to call for this component
+    //! Function to call for this component to execute it
     component_func func;
+    //! Function to call for this component on DMA (or NULL)
+    component_dma_complete dma_complete;
     //! Pointer to the workflow data structure
     void *data;
     //! The number of inputs to this component
@@ -221,18 +223,6 @@ typedef struct {
     // The components in the workflow follows; this has undefined length
     // workflow_component_config_t components[];
 } workflow_config_t;
-
-//! \brief A union that can be used to identify a DMA operation
-typedef union {
-    //! The ID of the DMA operation
-    uint32_t id;
-    struct {
-        //! The index of the element this is a transfer for
-        uint32_t index: 31;
-        //! Whether this is an input (1) or output (0)
-        uint32_t is_input: 1;
-    };
-} dma_id_t;
 
 //! \brief Configures a set of workflow components based on the provided
 //!        configuration.

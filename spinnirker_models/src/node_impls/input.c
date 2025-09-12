@@ -31,7 +31,7 @@ typedef struct {
     next_data_t *data;
 } input_data_t;
 
-static void* input_init(void *params) {
+static void* input_init(UNUSED uint32_t index, void *params) {
     // Cast the parameters to the input configuration
     next_data_t *config = (next_data_t *) params;
 

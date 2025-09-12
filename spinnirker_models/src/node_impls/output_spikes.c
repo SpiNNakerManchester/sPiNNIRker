@@ -40,7 +40,7 @@ typedef struct {
     uint32_t *data;
 } output_matrix_data_t;
 
-static void* output_spikes_init(void *params) {
+static void* output_spikes_init(UNUSED uint32_t index, void *params) {
     // Cast the parameters to the input configuration
     output_matrix_config_t *config = (output_matrix_config_t *) params;
 

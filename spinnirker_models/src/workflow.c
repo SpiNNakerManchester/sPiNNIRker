@@ -97,7 +97,8 @@ static bool setup_components(uint32_t n_components,
         // Set up the component with parameters (data follows the struct)
         const component_t *component = COMPONENTS[configs[i]->component_id];
         components[i].func = component->func;
-        components[i].data = component->init(params);
+        components[i].dma_complete = component->dma_complete;
+        components[i].data = component->init(i, params);
 
 
         // Create the component input pointers; note these don't have data
@@ -503,6 +504,7 @@ void setup_read_dma(workflow_t *workflow) {
 
     dma_id_t id;
     id.is_input = 1;
+    id.is_component = 0;
     id.index = next_input;
 
     // Set up the DMA transfer for this input
@@ -513,6 +515,20 @@ void setup_read_dma(workflow_t *workflow) {
 void process_dma_complete(dma_id_t id, workflow_t *workflow) {
     // Turn off interrupts while we process this DMA
     uint32_t cpsr = spin1_int_disable();
+
+    // Handle component DMA
+    if (id.is_component) {
+        // If this is a component DMA, call the callback
+        workflow_component_t *component = &workflow->components[id.index];
+        if (component->dma_complete) {
+            component->dma_complete(id, component->data);
+        } else {
+            log_error("Received unexpected DMA complete for component %u",
+                    id.index);
+        }
+        spin1_mode_restore(cpsr);
+        return;
+    }
 
     if (!id.is_input) {
         // If this is an output...
