@@ -16,4 +16,4 @@
 
 #include "../component.h"
 
-extern const component_t linear;
+extern const component_t linear_matrix;

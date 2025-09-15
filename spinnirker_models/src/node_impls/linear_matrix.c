@@ -38,12 +38,21 @@ typedef struct {
 typedef struct {
     //! The width of the weight matrix
     //! (consequently the width of the output)
-    uint32_t weights_width;
+    union {
+        uint32_t weights_width;
+        uint32_t output_width;
+    };
     //! The height of the weight matrix
     //! (consequently the width of the input)
-    uint32_t weights_height;
+    union {
+        uint32_t weights_height;
+        uint32_t input_width;
+    };
     //! The height of the input / output
-    uint32_t io_height;
+    union {
+        uint32_t input_height;
+        uint32_t output_height;
+    };
     //! The index of this component
     uint32_t component_index: 30;
     //! Whether the weights are in SDRAM or not
@@ -72,8 +81,10 @@ static void* linear_matrix_init(uint32_t index, void *params) {
 
     data->weights_width = config->weights_width;
     data->weights_height = config->weights_height;
-    data->io_height = config->io_height;
+    data->input_height = config->io_height;
     data->dma_in_progress = 0;
+    data->read_index = 0;
+    data->write_index = 0;
     data->component_index = index;
 
     // Try the weights in DTCM
@@ -96,13 +107,46 @@ static void transfer_weights(linear_matrix_data_t *data, uint32_t row) {
     // Get the data structure
     linear_matrix_data_t *linear_data = data;
 
-    if (!linear_data->weights_in_sdram) {
+    // If weights are in DTCM, or the row is too big, do nothing
+    if (!linear_data->weights_in_sdram || row >= linear_data->weights_height) {
         return;
     }
+
+    // Start the DMA of the row
+    linear_data->dma_in_progress = 1;
+    dma_id_t dma_id = {
+            .index = linear_data->component_index,
+            .is_component = 1,
+            .is_input = 0
+    };
+    int32_t *weights = &linear_data->weights[row * linear_data->weights_width];
+    uint32_t size = linear_data->weights_width * sizeof(int32_t);
+    spin1_dma_transfer(dma_id.id, (void *) weights,
+            linear_data->local_data[linear_data->write_index], DMA_READ, size);
+
+    // The next read index is the current write index
+    linear_data->read_index = linear_data->write_index;
+    linear_data->write_index = (linear_data->write_index + 1) % 2;
 }
 
-static int32_t *get_row(linear_matrix_data_t *data, uint32_t row) {
+static int32_t *get_weights(linear_matrix_data_t *data, uint32_t row) {
+    // Get the data structure
+    linear_matrix_data_t *linear_data = data;
 
+    // If weights are in DTCM, return a pointer to the row
+    if (!linear_data->weights_in_sdram) {
+        return &linear_data->weights[row * linear_data->weights_width];
+    }
+
+    // If the DMA is in progress, wait for it
+    uint32_t cspr = spin1_int_disable();
+    while (linear_data->dma_in_progress) {
+        spin1_wfi();
+    }
+    spin1_mode_restore(cspr);
+
+    // Return where we need to read from
+    return linear_data->local_data[linear_data->read_index];
 }
 
 static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
@@ -114,41 +158,51 @@ static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     // Convert to right type for output (Accum but only ever assigned to)
     // and clear
     int32_t *out_data = output.data;
-    for (uint32_t i = 0; i < linear_data->io_height; i++) {
-        uint32_t i_off = i * linear_data->weights_width;
-        for (uint32_t j = 0; j < linear_data->weights_width; j++) {
+    for (uint32_t i = 0; i < linear_data->output_height; i++) {
+        uint32_t i_off = i * linear_data->output_width;
+        for (uint32_t j = 0; j < linear_data->output_width; j++) {
             out_data[i_off + j] = 0;
         }
     }
 
-    // For each input, do a matrix multiplication to the output
-    for (uint32_t idx = 0; idx < n_inputs; idx++) {
-        int32_t *input_data = input[idx].data;
-        for (uint32_t i = 0; i < linear_data->io_height; i++) {
-            // Offset of row i in input
-            uint32_t i_off_in = i * linear_data->weights_height;
-            // Offset of row i in output
-            uint32_t i_out_off = i * linear_data->weights_width;
-            for (uint32_t j = 0; j < linear_data->weights_width; j++) {
-                // Accum as int32 - fine because we only ever add to it
+    // Request the first row of weights
+    transfer_weights(linear_data, 0);
+
+    // Run the loop over the weights, as those might be in SDRAM.
+    // This means we are doing matrix multiplication AxB = C by the rows of B
+    // rather than by the rows of C, meaning this will look a little odd...
+    for (uint32_t k = 0; k < linear_data->weights_height; k++) {
+        // Wait for the weights to be ready
+        int32_t *weights = get_weights(linear_data, k);
+
+        // Start the transfer of the next row (will be ignored if last row)
+        transfer_weights(linear_data, k + 1);
+
+        // Go through the row of weights
+        for (uint32_t j = 0; j < linear_data->weights_width; j++) {
+
+            // Go through column k of each of the input rows
+            for (uint32_t i = 0; i < linear_data->input_height; i++) {
+
+                // Offset of row i in input
+                uint32_t i_off_in = i * linear_data->input_width;
+                // Offset of row i in output
+                uint32_t i_off_out = i * linear_data->output_width;
+
+                // Add up each of the inputs
                 int32_t sum = 0;
-                for (uint32_t k = 0; k < linear_data->weights_height; k++) {
-                    uint32_t ik = i_off_in + k;
-                    // Offset of row k in weights
-                    uint32_t k_off = k * linear_data->weights_width;
-                    uint32_t kj = k_off + j;
-                    sum += __stdfix_smul_k(
-                            input_data[ik], linear_data->weights[kj]);
+                for (uint32_t idx = 0; idx < n_inputs; idx++) {
+                    sum += ((int32_t *) input[idx].data)[i_off_in + k];
                 }
 
-                // Write to the output
-                out_data[i_out_off + j] += sum;
+                // Add the product of input sum and weight to the output
+                out_data[i_off_out + j] = __stdfix_smul_k(sum, weights[j]);
             }
         }
     }
 }
 
-static void linear_matrix_dma_complete(dma_id_t id, void *data) {
+static void linear_matrix_dma_complete(UNUSED dma_id_t id, void *data) {
     // Get the data structure
     linear_matrix_data_t *linear_data = data;
     linear_data->dma_in_progress = 0;

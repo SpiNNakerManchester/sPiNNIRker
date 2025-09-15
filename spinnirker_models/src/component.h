@@ -18,6 +18,8 @@
 //! \brief Workflow component definitions
 #include <stdint.h>
 
+extern void spin1_wfi(void);
+
 typedef struct {
     // The source ID of the spike
     uint32_t global_source_id: 28;

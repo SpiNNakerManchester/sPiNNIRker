@@ -23,6 +23,7 @@
 #include "node_impls/input.h"
 #include "node_impls/output_matrix.h"
 #include "node_impls/output_spikes.h"
+#include "node_impls/linear_matrix.h"
 
 
 //! A list of components that can be used in a workflow
@@ -30,8 +31,9 @@ static const component_t *COMPONENTS[] = {
     &input,
     &output_matrix,
     &output_spikes,
+    &linear_matrix,
 };
-#define N_COMPONENTS 3
+#define N_COMPONENTS 4
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure
