@@ -375,7 +375,8 @@ static bool spike_matches(uint32_t time, uint32_t key, spike_input_t *input,
             input->n_spikes_delay_lost++;
             return false;
         }
-        spike->global_source_id = (get_core_id(key, input->key_info) * input->key_info.n_per_core) + get_local_id(key, input->key_info);
+        spike->global_source_id = (get_core_id(key, input->key_info) *
+                input->key_info.n_per_core) + get_local_id(key, input->key_info);
         return true;
     }
     return false;
@@ -565,7 +566,8 @@ void process_dma_complete(dma_id_t id, workflow_t *workflow) {
             uint32_t target = input->target_components[i];
             workflow_component_t *component = &workflow->components[target];
             component->n_input_dmas_done++;
-            if (component->n_input_dmas_done >= component->n_input_dmas_needed && !workflow->running && workflow->next_component == target) {
+            if (component->n_input_dmas_done >= component->n_input_dmas_needed
+                    && !workflow->running && workflow->next_component == target) {
                 // If the next component has all its input DMAs done, and the
                 // workflow is not currently running, start it again
                 start_run = true;
