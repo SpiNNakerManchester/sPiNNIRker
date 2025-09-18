@@ -11,7 +11,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-//! \file input.c
+//! \file linear_matrix.c
 //! \brief Linear NIR component implementation (matrix inputs)
 //! This is a 2D matrix multiplication of inputs by weights.
 
