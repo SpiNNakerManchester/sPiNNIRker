@@ -24,14 +24,15 @@
 #include "node_impls/output_matrix.h"
 #include "node_impls/output_spikes.h"
 #include "node_impls/linear_matrix.h"
-
+#include "node_impls/linear_spikes.h"
 
 //! A list of components that can be used in a workflow
 static const component_t *COMPONENTS[] = {
-    &input,
-    &output_matrix,
-    &output_spikes,
-    &linear_matrix,
+        &input,
+        &output_matrix,
+        &output_spikes,
+        &linear_matrix,
+        &linear_spikes,
 };
 #define N_COMPONENTS 4
 
@@ -74,10 +75,9 @@ static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
 static bool setup_components(uint32_t n_components,
         workflow_component_t *components,
         workflow_component_config_t **configs) {
-
     // First loop through all the components and initialize them and their
     // input pointers.
-    workflow_component_config_t *next_component = (void *) configs[0];
+    workflow_component_config_t *next_component = (void *)configs[0];
     for (uint32_t i = 0; i < n_components; i++) {
         // Keep track of the configuration for this component, which is in
         // a variable position based on the parameters of the last component
@@ -87,7 +87,7 @@ static bool setup_components(uint32_t n_components,
         // and move the next configuration pointer to the data after the
         // parameter data (won't be used if this is the last one)
         uint32_t *params = &(configs[i]->outputs[configs[i]->n_outputs]);
-        next_component = (void *) &params[configs[i]->param_size];
+        next_component = (void *)&params[configs[i]->param_size];
 
         // Find the component in the list
         if (configs[i]->component_id >= N_COMPONENTS) {
@@ -101,7 +101,6 @@ static bool setup_components(uint32_t n_components,
         components[i].func = component->func;
         components[i].dma_complete = component->dma_complete;
         components[i].data = component->init(i, params);
-
 
         // Create the component input pointers; note these don't have data
         // directly attached necessarily at this point, as they might just be
@@ -125,8 +124,10 @@ static bool setup_components(uint32_t n_components,
         }
         components[i].data_to_copy = spin1_malloc(sizeof(void *) * n_inputs);
         if (!components[i].data_to_copy) {
-            log_error("Failed to allocate %u data to copy pointers for "
-                    "component %u", n_inputs, i);
+            log_error(
+                    "Failed to allocate %u data to copy pointers for "
+                    "component %u",
+                    n_inputs, i);
             return false;
         }
 
@@ -138,8 +139,10 @@ static bool setup_components(uint32_t n_components,
         components[i].output.data = spin1_malloc(
                 sizeof(data_t) + (sizeof(uint32_t) * configs[i]->output_size));
         if (!components[i].output.data) {
-            log_error("Failed to allocate %u words of output data for "
-                    "component %u", configs[i]->output_size, i);
+            log_error(
+                    "Failed to allocate %u words of output data for "
+                    "component %u",
+                    configs[i]->output_size, i);
             return false;
         }
 
@@ -165,7 +168,7 @@ static bool setup_targets(uint32_t n_targets, uint32_t *target_indices,
         uint32_t input_index = next_inputs[target_index]++;
         if (input_index >= max_index) {
             log_error("Too many inputs for component %u, expected %u, got %u",
-                    target_index,  max_index, input_index);
+                    target_index, max_index, input_index);
             return false;
         }
 
@@ -207,13 +210,13 @@ static bool setup_spike_inputs(uint32_t n_spike_inputs,
         input->key_info = config->key_info;
 
         // Make the spike list to be used by the inputs
-        input->spikes = spin1_malloc(sizeof(spike_list_t)
-                + (sizeof(spike_t) * config->max_spikes));
+        input->spikes = spin1_malloc(
+                sizeof(spike_list_t) + (sizeof(spike_t) * config->max_spikes));
         // Check we have created a big enough buffer - +1 for the count
-        uint32_t expected_size = input->max_spikes + 1;
+        uint32_t expected_size = config->max_spikes + 1;
         if (!setup_targets(config->n_targets, config->target_components,
-                input->spikes, workflow, configs, next_inputs, expected_size,
-                false, DATA_TYPE_SPIKES)) {
+                    input->spikes, workflow, configs, next_inputs, expected_size,
+                    false, DATA_TYPE_SPIKES)) {
             return false;
         }
         input->max_spikes = config->max_spikes;
@@ -241,7 +244,7 @@ static bool setup_sdram_inputs(uint32_t n_sdram_inputs,
     for (uint32_t i = 0; i < n_sdram_inputs; i++) {
         sdram_input_t *input = &workflow->sdram_inputs[i];
         sdram_input_config_t *config = &sdram_inputs[i];
-        input->address = (data_t *) config->address;
+        input->address = (data_t *)config->address;
         input->size_in_bytes = config->size_in_bytes;
         input->local_data = spin1_malloc(input->size_in_bytes);
         if (!input->local_data) {
@@ -256,15 +259,16 @@ static bool setup_sdram_inputs(uint32_t n_sdram_inputs,
         if (!input->target_components) {
             log_error(
                     "Failed to allocate %u target components "
-                    "for SDRAM input %u", config->n_targets, i);
+                    "for SDRAM input %u",
+                    config->n_targets, i);
             return false;
         }
         spin1_memcpy(input->target_components, config->target_components,
                 target_bytes);
 
         if (!setup_targets(config->n_targets, config->target_components,
-                input->local_data, workflow, configs, next_inputs, 0, true,
-                DATA_TYPE_MATRIX)) {
+                    input->local_data, workflow, configs, next_inputs, 0, true,
+                    DATA_TYPE_MATRIX)) {
             return false;
         }
     }
@@ -287,7 +291,7 @@ static bool setup_sdram_outputs(uint32_t n_sdram_outputs,
     for (uint32_t i = 0; i < n_sdram_outputs; i++) {
         sdram_output_t *output = &workflow->sdram_outputs[i];
         sdram_output_config_t *config = &sdram_outputs[i];
-        output->address = (void *) config->address;
+        output->address = (void *)config->address;
         output->size_in_bytes = config->size_in_bytes;
         output->component_index = config->component_index;
     }
@@ -319,7 +323,6 @@ static bool setup_outputs(uint32_t n_components, workflow_t *workflow,
                 return false;
             }
 
-
             if (next_index == i) {
                 // If the component is a self-reference, copy the data first
                 uint32_t input_sz = config->input_size * sizeof(uint32_t);
@@ -327,8 +330,10 @@ static bool setup_outputs(uint32_t n_components, workflow_t *workflow,
                 target->data_to_copy[input] = component->output.data;
                 target->input[input].data = spin1_malloc(input_sz);
                 if (!target->input[input].data) {
-                    log_error("Failed to allocate %u bytes for self-reference "
-                            "input of component %u", input_sz, next_index);
+                    log_error(
+                            "Failed to allocate %u bytes for self-reference "
+                            "input of component %u",
+                            input_sz, next_index);
                     return false;
                 }
                 target->input[input].type = component->output.type;
@@ -364,15 +369,13 @@ static bool spike_matches(uint32_t time, uint32_t key, spike_input_t *input,
     if ((key & input->key_info.mask) == input->key_info.key) {
         input->n_spikes_received++;
         spike->delay = get_colour(time, input->key_info) -
-                get_colour(key, input->key_info);
+                       get_colour(key, input->key_info);
         if (spike->delay > get_colour(0xFFFFFFFF, input->key_info)) {
             // The spike delay is too large, so ignore it
             input->n_spikes_delay_lost++;
             return false;
         }
-        spike->global_source_id = (get_core_id(key, input->key_info)
-                * input->key_info.n_per_core)
-                + get_local_id(key, input->key_info);
+        spike->global_source_id = (get_core_id(key, input->key_info) * input->key_info.n_per_core) + get_local_id(key, input->key_info);
         return true;
     }
     return false;
@@ -411,26 +414,24 @@ bool configure_workflow(workflow_config_t *config, workflow_t **workflow) {
     }
 
     // Get Pointers to the elements following the configuration structure
-    spike_input_config_t *spike_inputs = (void *) &config->data[0];
+    spike_input_config_t *spike_inputs = (void *)&config->data[0];
     spike_input_config_t *last_spike_input =
             &spike_inputs[config->n_spike_inputs - 1];
     sdram_input_config_t *sdram_inputs =
-            (void*) &last_spike_input->target_components[
-                    last_spike_input->n_targets];
+            (void *)&last_spike_input->target_components[last_spike_input->n_targets];
     sdram_input_config_t *last_sdram_input =
             &sdram_inputs[config->n_sdram_inputs - 1];
     sdram_output_config_t *sdram_outputs =
-            (void*) &last_sdram_input->target_components[
-                    last_sdram_input->n_targets];
+            (void *)&last_sdram_input->target_components[last_sdram_input->n_targets];
     workflow_component_config_t *component_config =
-            (void*) &sdram_outputs[config->n_sdram_outputs];
+            (void *)&sdram_outputs[config->n_sdram_outputs];
 
     // Set up a list of pointers to keep the next components for later
     workflow_component_config_t *configs[n_components];
     configs[0] = component_config;
 
     if (!setup_components((*workflow)->n_components, (*workflow)->components,
-            configs)) {
+                configs)) {
         return false;
     }
 
@@ -442,15 +443,15 @@ bool configure_workflow(workflow_config_t *config, workflow_t **workflow) {
 
     // Setup the external inputs
     if (!setup_spike_inputs(config->n_spike_inputs, spike_inputs, *workflow,
-            configs, next_input)) {
+                configs, next_input)) {
         return false;
     }
     if (!setup_sdram_inputs(config->n_sdram_inputs, sdram_inputs, *workflow,
-            configs, next_input)) {
+                configs, next_input)) {
         return false;
     }
     if (!setup_sdram_outputs(config->n_sdram_outputs, sdram_outputs,
-            *workflow)) {
+                *workflow)) {
         return false;
     }
 
@@ -564,9 +565,7 @@ void process_dma_complete(dma_id_t id, workflow_t *workflow) {
             uint32_t target = input->target_components[i];
             workflow_component_t *component = &workflow->components[target];
             component->n_input_dmas_done++;
-            if (component->n_input_dmas_done >= component->n_input_dmas_needed
-                    && !workflow->running
-                    && workflow->next_component == target) {
+            if (component->n_input_dmas_done >= component->n_input_dmas_needed && !workflow->running && workflow->next_component == target) {
                 // If the next component has all its input DMAs done, and the
                 // workflow is not currently running, start it again
                 start_run = true;
@@ -577,7 +576,6 @@ void process_dma_complete(dma_id_t id, workflow_t *workflow) {
             workflow->running = true;
             spin1_trigger_user_event(0, 0);
         }
-
     }
 
     // Re-enable interrupts
@@ -625,8 +623,7 @@ void run_workflow(workflow_t *workflow) {
     workflow->next_component++;
     workflow_component_t *next_component =
             &workflow->components[workflow->next_component];
-    if (next_component->n_input_dmas_done
-            >= next_component->n_input_dmas_needed) {
+    if (next_component->n_input_dmas_done >= next_component->n_input_dmas_needed) {
         spin1_trigger_user_event(0, 0);
     } else {
         // If the inputs are not ready, pause running

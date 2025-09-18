@@ -63,6 +63,20 @@ typedef union {
     };
 } dma_id_t;
 
+//! Structure for constants for precise constant integer division (see div_by_const)
+typedef struct {
+    uint32_t m: 16;
+    uint32_t sh1: 8;
+    uint32_t sh2: 8;
+} div_const;
+
+//! \brief Divide by a constant - based on https://doi.org/10.1145/178243.178249
+static inline uint32_t div_by_const(uint32_t i, div_const d) {
+    uint32_t t1 = (i * d.m) >> 16;
+    uint32_t isubt1 = (i - t1) >> d.sh1;
+    return (t1 + isubt1) >> d.sh2;
+}
+
 //! \brief Defines a function type for components in a workflow.
 //! Note no input is the same as the output.
 //! \param[in] data: Pointer to the workflow data structure that holds

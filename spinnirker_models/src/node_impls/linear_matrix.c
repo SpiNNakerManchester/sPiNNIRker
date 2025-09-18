@@ -20,140 +20,21 @@
 #include <spin1_api.h>
 #include <debug.h>
 #include "linear_matrix.h"
+#include "linear_common.h"
 
-//! The configuration passed to the component
-typedef struct {
-    //! The width of the weight matrix
-    //! (consequently the width of the output)
-    uint32_t weights_width;
-    //! The height of the weight matrix
-    //! (consequently the width of the input)
-    uint32_t weights_height;
-    //! The height of the input / output
-    uint32_t io_height;
-    //! The weights (weights_width * weights_height in size)
-    int32_t weights[];
-} linear_matrix_config_t;
-
-typedef struct {
-    //! The width of the weight matrix
-    //! (consequently the width of the output)
-    union {
-        uint32_t weights_width;
-        uint32_t output_width;
-    };
-    //! The height of the weight matrix
-    //! (consequently the width of the input)
-    union {
-        uint32_t weights_height;
-        uint32_t input_width;
-    };
-    //! The height of the input / output
-    union {
-        uint32_t input_height;
-        uint32_t output_height;
-    };
-    //! The index of this component
-    uint32_t component_index: 30;
-    //! Whether the weights are in SDRAM or not
-    uint32_t weights_in_sdram: 1;
-    //! Whether a DMA is in progress or not
-    uint32_t dma_in_progress: 1;
-    //! The weights; might be in SDRAM if not sufficient space
-    int32_t *weights;
-    //! A space to read data into, but only if in SDRAM
-    int32_t *local_data[2];
-    //! The index of local data to read from
-    uint16_t read_index;
-    //! The index of local data to write to
-    uint16_t write_index;
-} linear_matrix_data_t;
-
-static void* linear_matrix_init(uint32_t index, void *params) {
-    // Cast the parameters to the configuration
-    linear_matrix_config_t *config = params;
-
-    linear_matrix_data_t *data = spin1_malloc(sizeof(linear_matrix_data_t));
+static void *linear_matrix_init(uint32_t index, void *params) {
+    linear_common_data_t *data = spin1_malloc(sizeof(linear_common_data_t));
     if (!data) {
         log_error("Failed to allocate linear matrix data structure");
-        return (void *) 0;
+        return (void *)0;
     }
-
-    data->weights_width = config->weights_width;
-    data->weights_height = config->weights_height;
-    data->input_height = config->io_height;
-    data->dma_in_progress = 0;
-    data->read_index = 0;
-    data->write_index = 0;
-    data->component_index = index;
-
-    // Try the weights in DTCM
-    uint32_t w_sz = data->weights_width * data->weights_height * sizeof(uint32_t);
-    data->weights = spin1_malloc(w_sz);
-    if (!data->weights) {
-        // Need to keep in SDRAM
-        data->weights = config->weights;
-        data->weights_in_sdram = 1;
-    } else {
-        // Copy to DTCM
-        spin1_memcpy(data->weights, config->weights, w_sz);
-        data->weights_in_sdram = 0;
-    }
-
-    return data;
-}
-
-static void transfer_weights(linear_matrix_data_t *data, uint32_t row) {
-    // Get the data structure
-    linear_matrix_data_t *linear_data = data;
-
-    // If weights are in DTCM, or the row is too big, do nothing
-    if (!linear_data->weights_in_sdram || row >= linear_data->weights_height) {
-        return;
-    }
-
-    // Start the DMA of the row
-    linear_data->dma_in_progress = 1;
-    dma_id_t dma_id = {
-            .index = linear_data->component_index,
-            .is_component = 1,
-            .is_input = 0
-    };
-    int32_t *weights = &linear_data->weights[row * linear_data->weights_width];
-    uint32_t size = linear_data->weights_width * sizeof(int32_t);
-    spin1_dma_transfer(dma_id.id, (void *) weights,
-            linear_data->local_data[linear_data->write_index], DMA_READ, size);
-
-    // The next read index is the current write index
-    linear_data->read_index = linear_data->write_index;
-    linear_data->write_index = (linear_data->write_index + 1) % 2;
-}
-
-static int32_t *get_weights(linear_matrix_data_t *data, uint32_t row) {
-    // Get the data structure
-    linear_matrix_data_t *linear_data = data;
-
-    // If weights are in DTCM, return a pointer to the row
-    if (!linear_data->weights_in_sdram) {
-        return &linear_data->weights[row * linear_data->weights_width];
-    }
-
-    // If the DMA is in progress, wait for it
-    uint32_t cspr = spin1_int_disable();
-    while (linear_data->dma_in_progress) {
-        spin1_wfi();
-    }
-    spin1_mode_restore(cspr);
-
-    // Return where we need to read from
-    return linear_data->local_data[linear_data->read_index];
+    return linear_common_init(index, params, data);
 }
 
 static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
         data_t output) {
-
     // Get the data structure
-    linear_matrix_data_t *linear_data = data;
+    linear_common_data_t *linear_data = data;
 
     // Convert to right type for output (Accum but only ever assigned to)
     // and clear
@@ -180,10 +61,8 @@ static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
 
         // Go through the row of weights
         for (uint32_t j = 0; j < linear_data->weights_width; j++) {
-
             // Go through column k of each of the input rows
             for (uint32_t i = 0; i < linear_data->input_height; i++) {
-
                 // Offset of row i in input
                 uint32_t i_off_in = i * linear_data->input_width;
                 // Offset of row i in output
@@ -192,7 +71,7 @@ static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
                 // Add up each of the inputs
                 int32_t sum = 0;
                 for (uint32_t idx = 0; idx < n_inputs; idx++) {
-                    sum += ((int32_t *) input[idx].data)[i_off_in + k];
+                    sum += ((int32_t *)input[idx].data)[i_off_in + k];
                 }
 
                 // Add the product of input sum and weight to the output
@@ -202,19 +81,8 @@ static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     }
 }
 
-static void linear_matrix_dma_complete(UNUSED dma_id_t id, void *data) {
-    // Get the data structure
-    linear_matrix_data_t *linear_data = data;
-    linear_data->dma_in_progress = 0;
-}
-
-static void linear_matrix_deinit(void *data) {
-    sark_free(data);
-}
-
 const component_t linear_matrix = {
-    .init = linear_matrix_init,
-    .func = linear_matrix_exec,
-    .deinit = linear_matrix_deinit,
-    .dma_complete = linear_matrix_dma_complete
-};
+        .init = linear_matrix_init,
+        .func = linear_matrix_exec,
+        .deinit = linear_common_deinit,
+        .dma_complete = linear_common_dma_complete};
