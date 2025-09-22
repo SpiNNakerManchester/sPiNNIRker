@@ -133,40 +133,6 @@ static void linear_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
         // Now start at the next weight row that is valid (or beyond end)
         k = next_k;
     }
-
-    // Request the first row of weights
-    transfer_weights(linear_data, 0);
-
-    // Run the loop over the weights, as those might be in SDRAM.
-    // This means we are doing matrix multiplication AxB = C by the rows of B
-    // rather than by the rows of C, meaning this will look a little odd...
-    for (uint32_t k = 0; k < linear_data->weights_height; k++) {
-        // Wait for the weights to be ready
-        int32_t *weights = get_weights(linear_data, k);
-
-        // Start the transfer of the next row (will be ignored if last row)
-        transfer_weights(linear_data, k + 1);
-
-        // Go through the row of weights
-        for (uint32_t j = 0; j < linear_data->weights_width; j++) {
-            // Go through column k of each of the input rows
-            for (uint32_t i = 0; i < linear_data->input_height; i++) {
-                // Offset of row i in input
-                uint32_t i_off_in = i * linear_data->input_width;
-                // Offset of row i in output
-                uint32_t i_off_out = i * linear_data->output_width;
-
-                // Add up each of the inputs
-                int32_t sum = 0;
-                for (uint32_t idx = 0; idx < n_inputs; idx++) {
-                    sum += ((int32_t *)input[idx].data)[i_off_in + k];
-                }
-
-                // Add the product of input sum and weight to the output
-                out_data[i_off_out + j] = __stdfix_smul_k(sum, weights[j]);
-            }
-        }
-    }
 }
 
 const component_t linear_spikes = {

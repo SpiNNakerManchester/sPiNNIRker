@@ -14,6 +14,8 @@
 //! \file linear_common.h
 //! \brief Linear NIR common implementation
 
+#include <stdint.h>
+
 //! The configuration passed to the component
 typedef struct {
     //! The width of the weight matrix
