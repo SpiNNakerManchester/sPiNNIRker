@@ -90,11 +90,13 @@ static void affine_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
 
         // Start the transfer of the next row (will be ignored if last row)
         transfer_biases(affine_data, j + 1);
+
+        // Add the biases to the output row
         for (uint32_t i = 0; i < affine_data->output_width; i++) {
             uint32_t i_off_out = i * affine_data->output_width;
                 out_data[i_off_out + i] += biases[i];
-            }
         }
+    }
 }
 
 const component_t affine_matrix = {

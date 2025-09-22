@@ -26,7 +26,7 @@
 #include "node_impls/linear_matrix.h"
 #include "node_impls/linear_spikes.h"
 #include "node_impls/affine_matrix.h"
-// #include "node_impls/affine_spikes.h"
+#include "node_impls/affine_spikes.h"
 
 //! A list of components that can be used in a workflow
 static const component_t *COMPONENTS[] = {
@@ -36,9 +36,9 @@ static const component_t *COMPONENTS[] = {
         &linear_matrix,
         &linear_spikes,
         &affine_matrix,
-        // &affine_spikes,
+        &affine_spikes,
 };
-#define N_COMPONENTS 5
+#define N_COMPONENTS 6
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure
