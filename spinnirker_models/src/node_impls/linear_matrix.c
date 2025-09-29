@@ -23,6 +23,7 @@
 #include "linear_common.h"
 #include "matrix_matrix_common.h"
 #include "matrix_common_multiply.h"
+#include "matrix_clear.h"
 
 static void *linear_matrix_init(uint32_t index, void *params) {
     linear_common_data_t *data = spin1_malloc(sizeof(linear_common_data_t));

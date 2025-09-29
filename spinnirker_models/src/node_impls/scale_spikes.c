@@ -22,6 +22,7 @@
 #include <debug.h>
 #include "scale_spikes.h"
 #include "matrix_spikes_common.h"
+#include "matrix_clear.h"
 
 typedef struct {
     //! 1/the width of the input (to do division by)

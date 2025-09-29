@@ -25,6 +25,7 @@
 #include "matrix_common_multiply.h"
 #include "matrix_matrix_common.h"
 #include "matrix_spikes_common.h"
+#include "matrix_clear.h"
 
 typedef struct {
     //! 1/the width of the input (to do division by)

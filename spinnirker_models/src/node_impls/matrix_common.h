@@ -115,16 +115,6 @@ static int32_t *matrix_get_row(matrix_data_t *matrix_data, uint32_t row) {
     return matrix_data->local_data[matrix_data->read_index];
 }
 
-static void matrix_clear_outputs(data_t output, uint32_t n_words) {
-    // Convert to right type for output (Accum but only ever added to)
-    uint32_t *out_data = output.data;
-
-    // Clear the output
-    for (uint32_t i = 0; i < n_words; i++) {
-        out_data[i] = 0;
-    }
-}
-
 static void matrix_common_dma_complete(UNUSED dma_id_t id, void *data) {
     // Get the data structure
     matrix_data_t *matrix_data = data;

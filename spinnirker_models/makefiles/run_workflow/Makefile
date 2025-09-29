@@ -19,5 +19,6 @@ SOURCES = workflow.c main.c \
 	node_impls/linear_matrix.c node_impls/linear_spikes.c \
 	node_impls/affine_matrix.c node_impls/affine_spikes.c \
 	node_impls/scale_matrix.c node_impls/scale_spikes.c \
-	node_impls/spike_matrix.c node_impls/spike_spikes.c
+	node_impls/spike_matrix.c node_impls/spike_spikes.c \
+	node_impls/integrator_matrix.c node_impls/integrator_spikes.c
 include ../support.mk

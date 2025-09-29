@@ -35,8 +35,6 @@ static void scale_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     // Get the data structure
     matrix_data_t *scale_data = data;
 
-    matrix_clear_outputs(output, scale_data->width * scale_data->height);
-
     matrix_loop_t loop = matrix_loop_start(scale_data);
     int32_t *out_data = output.data;
     int32_t value;

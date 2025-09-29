@@ -31,6 +31,8 @@
 #include "node_impls/scale_spikes.h"
 #include "node_impls/spike_matrix.h"
 #include "node_impls/spike_spikes.h"
+#include "node_impls/integrator_matrix.h"
+#include "node_impls/integrator_spikes.h"
 
 //! A list of components that can be used in a workflow
 static const component_t *COMPONENTS[] = {
@@ -45,8 +47,10 @@ static const component_t *COMPONENTS[] = {
         &scale_spikes,
         &spike_matrix,
         &spike_spikes,
+        &integrator_matrix,
+        &integrator_spikes,
 };
-#define N_COMPONENTS 10
+#define N_COMPONENTS 12
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure

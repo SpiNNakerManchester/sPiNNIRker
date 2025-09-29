@@ -11,8 +11,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-//! \file linear_spikes.c
-//! \brief Linear NIR component implementation (spike inputs)
+//! \file integrator_spikes.c
+//! \brief integrator NIR component implementation (spike inputs)
 //! This is a 2D matrix multiplication of inputs by weights, but using
 //! spikes for improved efficiency.
 
@@ -20,66 +20,66 @@
 #include <stdfix-full-iso.h>
 #include <spin1_api.h>
 #include <debug.h>
-#include "linear_spikes.h"
-#include "linear_common.h"
+#include "integrator_spikes.h"
 #include "matrix_spikes_common.h"
-#include "matrix_common_multiply.h"
 #include "matrix_clear.h"
 
 typedef struct {
     //! 1/the width of the input (to do division by)
     div_const input_width_inv;
 
-    linear_common_config_t base_config;
-} linear_spikes_config_t;
+    matrix_config_t integrator_matrix;
+} integrator_spikes_config_t;
 
 typedef struct {
     //! 1/the width of the input (to do division by)
     div_const input_width_inv;
 
-    linear_common_data_t base_config;
-} linear_spikes_data_t;
+    matrix_data_t integrator_matrix;
+} integrator_spikes_data_t;
 
-static void *linear_spikes_init(uint32_t index, void *params) {
-    linear_spikes_data_t *data = spin1_malloc(sizeof(linear_spikes_data_t));
+static void *integrator_spikes_init(uint32_t index, void *params) {
+    integrator_spikes_data_t *data = spin1_malloc(sizeof(integrator_spikes_data_t));
     if (!data) {
-        log_error("Failed to allocate linear matrix data structure");
+        log_error("Failed to allocate integrator matrix data structure");
         return (void *)0;
     }
-    linear_spikes_config_t *spikes_config = params;
-    linear_common_init(index, &spikes_config->base_config, &data->base_config);
+    integrator_spikes_config_t *spikes_config = params;
+    matrix_init(index, &spikes_config->integrator_matrix, &data->integrator_matrix);
     data->input_width_inv = spikes_config->input_width_inv;
     return data;
 }
 
-static void linear_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
+static void integrator_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
         data_t output) {
     // Get the data structure
-    linear_spikes_data_t *spikes_data = data;
-    linear_common_data_t *linear_data = &spikes_data->base_config;
-    matrix_data_t *matrix_data = &linear_data->weights_data;
+    integrator_spikes_data_t *spikes_data = data;
+    matrix_data_t *integrator_data = &spikes_data->integrator_matrix;
+    int32_t *out_data = output.data;
 
-    // Reset out data
-    matrix_clear_outputs(output, matrix_data->width);
-
-    // For simplicity, the input width = the matrix height
-    uint32_t input_width = matrix_data->height;
+    matrix_clear_outputs(output, integrator_data->width * integrator_data->height);
 
     // Start a loop - if there are no spikes, we are done
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
-            input_width, spikes_data->input_width_inv, 1, matrix_data);
+            integrator_data->width, spikes_data->input_width_inv, 0, integrator_data);
 
     uint32_t row;
     uint32_t col;
     int32_t value;
     while (matrix_spikes_loop_is_next(&loop, &value, &row, &col)) {
-        matrix_matrix_multiply(loop.matrix_data, row, col, loop.current_data,
-            input, n_inputs, output.data);
+        // Go through and sum the inputs
+        int32_t acc = 0;
+        uint32_t i_off = row * integrator_data->width;
+        for (uint32_t k = 0; k < n_inputs; k++) {
+            int32_t *in_data = input[k].data;
+            acc += in_data[i_off + col];
+        }
+        out_data[i_off + col] += __stdfix_smul_k(acc, value);
     }
 }
 
-const component_t linear_spikes = {
-    .init = linear_spikes_init,
-    .func = linear_spikes_exec,
+const component_t integrator_spikes = {
+    .init = integrator_spikes_init,
+    .func = integrator_spikes_exec,
     .dma_complete = matrix_common_dma_complete
 };
