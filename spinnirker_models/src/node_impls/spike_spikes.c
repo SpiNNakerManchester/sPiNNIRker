@@ -11,56 +11,61 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-//! \file scale_spikes.c
-//! \brief scale NIR component implementation (spike inputs)
-//! This is a 2D matrix multiplication of inputs by weights, but using
-//! spikes for improved efficiency.
+//! \file spike_spikes.c
+//! \brief spike NIR component implementation (spike inputs)
 
 #include <arm_acle.h>
 #include <stdfix-full-iso.h>
 #include <spin1_api.h>
 #include <debug.h>
-#include "scale_spikes.h"
+#include "spike_spikes.h"
 #include "matrix_spikes_common.h"
 
 typedef struct {
     //! 1/the width of the input (to do division by)
     div_const input_width_inv;
 
-    matrix_config_t scale_matrix;
-} scale_spikes_config_t;
+    //! The spike key to send
+    uint32_t key;
+
+    matrix_config_t spike_matrix;
+} spike_spikes_config_t;
 
 typedef struct {
     //! 1/the width of the input (to do division by)
     div_const input_width_inv;
 
-    matrix_data_t scale_matrix;
-} scale_spikes_data_t;
+    //! The spike key to send
+    uint32_t key;
 
-static void *scale_spikes_init(uint32_t index, void *params) {
-    scale_spikes_data_t *data = spin1_malloc(sizeof(scale_spikes_data_t));
+    matrix_data_t spike_matrix;
+} spike_spikes_data_t;
+
+static void *spike_spikes_init(uint32_t index, void *params) {
+    spike_spikes_data_t *data = spin1_malloc(sizeof(spike_spikes_data_t));
     if (!data) {
-        log_error("Failed to allocate scale matrix data structure");
+        log_error("Failed to allocate spike matrix data structure");
         return (void *)0;
     }
-    scale_spikes_config_t *spikes_config = params;
-    matrix_init(index, &spikes_config->scale_matrix, &data->scale_matrix);
+    spike_spikes_config_t *spikes_config = params;
+    matrix_init(index, &spikes_config->spike_matrix, &data->spike_matrix);
     data->input_width_inv = spikes_config->input_width_inv;
+    data->key = spikes_config->key;
     return data;
 }
 
-static void scale_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
+static void spike_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
         data_t output) {
     // Get the data structure
-    scale_spikes_data_t *spikes_data = data;
-    matrix_data_t *scale_data = &spikes_data->scale_matrix;
+    spike_spikes_data_t *spike_data = data;
+    matrix_data_t *thresh_data = &spike_data->spike_matrix;
     int32_t *out_data = output.data;
 
-    matrix_clear_outputs(output, scale_data->width * scale_data->height);
+    matrix_clear_outputs(output, thresh_data->width * thresh_data->height);
 
     // Start a loop - if there are no spikes, we are done
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
-            scale_data->width, spikes_data->input_width_inv, 0, scale_data);
+            thresh_data->width, spike_data->input_width_inv, 0, thresh_data);
 
     uint32_t row;
     uint32_t col;
@@ -68,17 +73,21 @@ static void scale_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     while (matrix_spikes_loop_is_next(&loop, &value, &row, &col)) {
         // Go through and sum the inputs
         int32_t acc = 0;
-        uint32_t i_off = row * scale_data->width;
+        uint32_t i_off = row * thresh_data->width;
         for (uint32_t k = 0; k < n_inputs; k++) {
             int32_t *in_data = input[k].data;
             acc += in_data[i_off + col];
         }
-        out_data[i_off + col] = __stdfix_smul_k(acc, value);
+        uint32_t spike = acc >= value;
+        out_data[i_off + col] = spike;
+        if (spike) {
+            spin1_send_mc_packet(spike_data->key + i_off + col, 0, 0);
+        }
     }
 }
 
-const component_t scale_spikes = {
-    .init = scale_spikes_init,
-    .func = scale_spikes_exec,
+const component_t spike_spikes = {
+    .init = spike_spikes_init,
+    .func = spike_spikes_exec,
     .dma_complete = matrix_common_dma_complete
 };

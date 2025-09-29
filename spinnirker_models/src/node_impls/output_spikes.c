@@ -97,12 +97,7 @@ static void output_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     output_data->time++;
 }
 
-static void output_spikes_deinit(void *data) {
-    sark_free(data);
-}
-
 const component_t output_spikes = {
     .init = output_spikes_init,
-    .func = output_spikes_exec,
-    .deinit = output_spikes_deinit
+    .func = output_spikes_exec
 };

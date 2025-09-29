@@ -93,10 +93,6 @@ typedef void (*component_func)(void *data, uint32_t n_inputs, data_t *input,
 //! \return Pointer to the initialized component data structure
 typedef void* (*component_init)(uint32_t index, void *params);
 
-//! \brief Defines a function type for deinitializing components in a workflow
-//! \param[in] data: Pointer to the component data structure to be deinitialized
-typedef void (*component_deinit)(void *data);
-
 //! \brief Defines a function type for handling DMA completion for a component
 //! \param[in] tag: The DMA ID tag that has completed
 //! \param[in] data: Pointer to the component data structure
@@ -108,8 +104,6 @@ typedef struct {
     component_func func;
     //! Function to call to initialize this component
     component_init init;
-    //! Function to call to deinitialize this component
-    component_deinit deinit;
     //! Function to call when a DMA is complete for this component (can be NULL)
     component_dma_complete dma_complete;
 } component_t;

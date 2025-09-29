@@ -14,170 +14,41 @@
 //! \file affine_common.h
 //! \brief Affine NIR common implementation
 
+#include <stdint.h>
+#include <spin1_api.h>
+#include <debug.h>
+#include "../component.h"
+#include "matrix_common.h"
+
 //! The configuration passed to the component
 typedef struct {
-    //! The width of the weight matrix
-    //! (consequently the width of the output)
-    uint32_t weights_width;
-    //! The height of the weight matrix
-    //! (consequently the width of the input)
-    uint32_t weights_height;
     //! The height of the input / output
     uint32_t io_height;
-    //! The weights (weights_width * weights_height in size)
-    int32_t weights[];
-    //! Followed by the bias values (weights_width * io_height in size)
-    // int32_t bias[];
+
+    // The common matrix parameters
+    matrix_config_t matrix;
+    // The common bias parameters follows (disallowed in C)
+    // matrix_config_t bias;
 } affine_common_config_t;
 
 typedef struct {
-    //! The width of the weight matrix
-    //! (consequently the width of the output)
-    union {
-        uint32_t weights_width;
-        uint32_t output_width;
-    };
-    //! The height of the weight matrix
-    //! (consequently the width of the input)
-    union {
-        uint32_t weights_height;
-        uint32_t input_width;
-    };
     //! The height of the input / output
     union {
         uint32_t input_height;
         uint32_t output_height;
     };
-    //! The index of this component
-    uint32_t component_index : 30;
-    //! Whether the weights are in SDRAM or not
-    uint32_t weights_in_sdram : 1;
-    //! Whether a DMA is in progress or not
-    uint32_t dma_in_progress : 1;
-    //! The weights; might be in SDRAM if not sufficient space
-    int32_t *weights;
-    //! The bias values; may also be in SDRAM, but only if weights are too
-    int32_t *bias;
-    //! A space to read data into, but only if in SDRAM
-    int32_t *local_data[2];
-    //! The index of local data to read from
-    uint16_t read_index;
-    //! The index of local data to write to
-    uint16_t write_index;
+    //! The common matrix data
+    matrix_data_t weights_data;
+    //! The bias data
+    matrix_data_t bias_data;
 } affine_common_data_t;
 
 static affine_common_data_t *affine_common_init(uint32_t index,
         affine_common_config_t *config, affine_common_data_t *data) {
-    data->weights_width = config->weights_width;
-    data->weights_height = config->weights_height;
+    matrix_init(index, &config->matrix, &data->weights_data);
+    matrix_config_t *bias_config = (matrix_config_t *)
+            (&config->matrix.data[config->matrix.width * config->matrix.height]);
+    matrix_init(index, bias_config, &data->bias_data);
     data->input_height = config->io_height;
-    data->dma_in_progress = 0;
-    data->read_index = 0;
-    data->write_index = 0;
-    data->component_index = index;
-
-    // Try the weights and biases in DTCM
-    uint32_t w_sz = data->weights_width * data->weights_height * sizeof(int32_t);
-    uint32_t b_sz = data->output_width * data->output_height * sizeof(int32_t);
-    data->weights = spin1_malloc(w_sz + b_sz);
-    if (!data->weights) {
-        // Need to keep in SDRAM
-        data->weights = config->weights;
-        data->bias = &config->weights[data->weights_width * data->weights_height];
-        data->weights_in_sdram = 1;
-    } else {
-        // Copy to DTCM
-        spin1_memcpy(data->weights, config->weights, w_sz + b_sz);
-        data->bias = &data->weights[data->weights_width * data->weights_height];
-        data->weights_in_sdram = 0;
-    }
     return data;
-}
-
-static void transfer_weights(affine_common_data_t *data, uint32_t row) {
-    // If weights are in DTCM, or the row is too big, do nothing
-    if (!data->weights_in_sdram || row >= data->weights_height) {
-        return;
-    }
-
-    // Start the DMA of the row
-    data->dma_in_progress = 1;
-    dma_id_t dma_id = {
-            .index = data->component_index,
-            .is_component = 1,
-            .is_input = 0};
-    int32_t *weights = &data->weights[row * data->weights_width];
-    uint32_t size = data->weights_width * sizeof(int32_t);
-    spin1_dma_transfer(dma_id.id, (void *)weights,
-            data->local_data[data->write_index], DMA_READ, size);
-
-    // The next read index is the current write index
-    data->read_index = data->write_index;
-    data->write_index = (data->write_index + 1) % 2;
-}
-
-static void transfer_biases(affine_common_data_t *data, uint32_t row) {
-    // If biases are in DTCM, or the row is too big, do nothing
-    if (!data->weights_in_sdram || row >= data->output_height) {
-        return;
-    }
-
-    // Start the DMA of the row
-    data->dma_in_progress = 1;
-    dma_id_t dma_id = {
-            .index = data->component_index,
-            .is_component = 1,
-            .is_input = 0};
-    int32_t *bias = &data->bias[row * data->output_width];
-    uint32_t size = data->output_width * sizeof(int32_t);
-    spin1_dma_transfer(dma_id.id, (void *) bias,
-            data->local_data[data->write_index], DMA_READ, size);
-
-    // The next read index is the current write index
-    data->read_index = data->write_index;
-    data->write_index = (data->write_index + 1) % 2;
-}
-
-static int32_t *get_weights(affine_common_data_t *data, uint32_t row) {
-    // If weights are in DTCM, return a pointer to the row
-    if (!data->weights_in_sdram) {
-        return &data->weights[row * data->weights_width];
-    }
-
-    // If the DMA is in progress, wait for it
-    uint32_t cspr = spin1_int_disable();
-    while (data->dma_in_progress) {
-        spin1_wfi();
-    }
-    spin1_mode_restore(cspr);
-
-    // Return where we need to read from
-    return data->local_data[data->read_index];
-}
-
-static int32_t *get_biases(affine_common_data_t *data, uint32_t row) {
-    // If weights are in DTCM, return a pointer to the row
-    if (!data->weights_in_sdram) {
-        return &data->bias[row * data->output_width];
-    }
-
-    // If the DMA is in progress, wait for it
-    uint32_t cspr = spin1_int_disable();
-    while (data->dma_in_progress) {
-        spin1_wfi();
-    }
-    spin1_mode_restore(cspr);
-
-    // Return where we need to read from
-    return data->local_data[data->read_index];
-}
-
-static void affine_common_dma_complete(UNUSED dma_id_t id, void *data) {
-    // Get the data structure
-    affine_common_data_t *affine_data = data;
-    affine_data->dma_in_progress = 0;
-}
-
-static void affine_common_deinit(void *data) {
-    sark_free(data);
 }

@@ -73,12 +73,7 @@ static void output_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     output_data->time++;
 }
 
-static void output_matrix_deinit(void *data) {
-    sark_free(data);
-}
-
 const component_t output_matrix = {
     .init = output_matrix_init,
-    .func = output_matrix_exec,
-    .deinit = output_matrix_deinit
+    .func = output_matrix_exec
 };

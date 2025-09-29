@@ -21,6 +21,8 @@
 #include <debug.h>
 #include "linear_matrix.h"
 #include "linear_common.h"
+#include "matrix_matrix_common.h"
+#include "matrix_common_multiply.h"
 
 static void *linear_matrix_init(uint32_t index, void *params) {
     linear_common_data_t *data = spin1_malloc(sizeof(linear_common_data_t));
@@ -36,53 +38,22 @@ static void linear_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     // Get the data structure
     linear_common_data_t *linear_data = data;
 
-    // Convert to right type for output (Accum but only ever assigned to)
-    // and clear
-    int32_t *out_data = output.data;
-    for (uint32_t i = 0; i < linear_data->output_height; i++) {
-        uint32_t i_off = i * linear_data->output_width;
-        for (uint32_t j = 0; j < linear_data->output_width; j++) {
-            out_data[i_off + j] = 0;
-        }
-    }
+    matrix_clear_outputs(output, linear_data->output_height *
+            linear_data->weights_data.width);
 
-    // Request the first row of weights
-    transfer_weights(linear_data, 0);
+    matrix_loop_t loop = matrix_loop_start(&linear_data->weights_data);
 
-    // Run the loop over the weights, as those might be in SDRAM.
-    // This means we are doing matrix multiplication AxB = C by the rows of B
-    // rather than by the rows of C, meaning this will look a little odd...
-    for (uint32_t k = 0; k < linear_data->weights_height; k++) {
-        // Wait for the weights to be ready
-        int32_t *weights = get_weights(linear_data, k);
-
-        // Start the transfer of the next row (will be ignored if last row)
-        transfer_weights(linear_data, k + 1);
-
-        // Go through the row of weights
-        for (uint32_t j = 0; j < linear_data->weights_width; j++) {
-            // Go through column k of each of the input rows
-            for (uint32_t i = 0; i < linear_data->input_height; i++) {
-                // Offset of row i in input
-                uint32_t i_off_in = i * linear_data->input_width;
-                // Offset of row i in output
-                uint32_t i_off_out = i * linear_data->output_width;
-
-                // Add up each of the inputs
-                int32_t sum = 0;
-                for (uint32_t idx = 0; idx < n_inputs; idx++) {
-                    sum += ((int32_t *)input[idx].data)[i_off_in + k];
-                }
-
-                // Add the product of input sum and weight to the output
-                out_data[i_off_out + j] = __stdfix_smul_k(sum, weights[j]);
-            }
-        }
+    int32_t value;
+    uint32_t row;
+    uint32_t col;
+    while (matrix_loop_is_next(&loop, &value, &row, &col)) {
+        matrix_matrix_multiply(loop.data, row, col, loop.current_data, input,
+            n_inputs, output.data);
     }
 }
 
 const component_t linear_matrix = {
-        .init = linear_matrix_init,
-        .func = linear_matrix_exec,
-        .deinit = linear_common_deinit,
-        .dma_complete = linear_common_dma_complete};
+    .init = linear_matrix_init,
+    .func = linear_matrix_exec,
+    .dma_complete = matrix_common_dma_complete
+};

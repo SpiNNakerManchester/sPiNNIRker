@@ -63,12 +63,7 @@ static void input_exec(void *data, UNUSED uint32_t n_inputs, UNUSED data_t *inpu
     input_data->data = (next_data_t *) &input_data->data->words[n_words];
 }
 
-static void input_deinit(void *data) {
-    sark_free(data);
-}
-
 const component_t input = {
     .init = input_init,
-    .func = input_exec,
-    .deinit = input_deinit
+    .func = input_exec
 };

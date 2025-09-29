@@ -13,63 +13,49 @@
 */
 //! \file scale_matrix.c
 //! \brief scale NIR component implementation (matrix inputs)
-//! This is a 2D matrix multiplication of inputs by weights.
 
 #include <arm_acle.h>
 #include <stdfix-full-iso.h>
 #include <spin1_api.h>
 #include <debug.h>
 #include "scale_matrix.h"
-#include "scale_common.h"
+#include "matrix_matrix_common.h"
 
 static void *scale_matrix_init(uint32_t index, void *params) {
-    scale_common_data_t *data = spin1_malloc(sizeof(scale_common_data_t));
+    matrix_data_t *data = spin1_malloc(sizeof(matrix_data_t));
     if (!data) {
         log_error("Failed to allocate scale matrix data structure");
         return (void *)0;
     }
-    return scale_common_init(index, params, data);
+    return matrix_init(index, params, data);
 }
 
 static void scale_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
         data_t output) {
     // Get the data structure
-    scale_common_data_t *scale_data = data;
+    matrix_data_t *scale_data = data;
 
-    // Get the output data pointer
+    matrix_clear_outputs(output, scale_data->width * scale_data->height);
+
+    matrix_loop_t loop = matrix_loop_start(scale_data);
     int32_t *out_data = output.data;
-
-    // Request the first row of scale matrix
-    transfer_scale(scale_data, 0);
-
-    // Run the loop over the rows
-    for (uint32_t i = 0; i < scale_data->height; i++) {
-        // Wait for the scale data to be ready
-        int32_t *scale = get_scale(scale_data, i);
-
-        // Start the transfer of the next row (will be ignored if last row)
-        transfer_scale(scale_data, i + 1);
-
-        // Offset of row in input and output
-        uint32_t i_off = i * scale_data->width;
-
-        // Go through the row
-        for (uint32_t j = 0; j < scale_data->width; j++) {
-
-            // Go through and sum the inputs
-            int32_t acc = 0;
-            for (uint32_t k = 0; k < n_inputs; k++) {
-                int32_t *in_data = input[k].data;
-                acc += in_data[i_off + j];
-            }
-            out_data[i_off + j] = __stdfix_smul_k(acc, scale[j]);
+    int32_t value;
+    uint32_t row;
+    uint32_t col;
+    while (matrix_loop_is_next(&loop, &value, &row, &col)) {
+        // Go through and sum the inputs
+        int32_t acc = 0;
+        uint32_t i_off = row * scale_data->width;
+        for (uint32_t k = 0; k < n_inputs; k++) {
+            int32_t *in_data = input[k].data;
+            acc += in_data[i_off + col];
         }
+        out_data[i_off + col] = __stdfix_smul_k(acc, value);
     }
 }
 
 const component_t scale_matrix = {
         .init = scale_matrix_init,
         .func = scale_matrix_exec,
-        .deinit = scale_common_deinit,
-        .dma_complete = scale_common_dma_complete
+        .dma_complete = matrix_common_dma_complete
 };
