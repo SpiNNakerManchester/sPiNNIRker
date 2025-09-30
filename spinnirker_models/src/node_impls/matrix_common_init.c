@@ -11,8 +11,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-//! \file matrix_common.h
-//! \brief Common matrix functions
+//! \file matrix_common_init.c
+//! \brief Common matrix initialisation functions
 
 #include <spin1_api.h>
 #include "matrix_common_init.h"
