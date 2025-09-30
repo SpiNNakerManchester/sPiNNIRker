@@ -47,3 +47,9 @@ typedef struct {
 
 extern matrix_data_t *matrix_init(uint32_t index, matrix_config_t *config,
         matrix_data_t *data);
+
+extern void matrix_common_dma_complete(UNUSED dma_id_t id, void *data);
+
+extern void matrix_transfer_row(matrix_data_t *matrix_data, uint32_t row);
+
+extern int32_t *matrix_get_row(matrix_data_t *matrix_data, uint32_t row);

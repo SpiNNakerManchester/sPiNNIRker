@@ -15,6 +15,8 @@
 //! \brief Common matrix initialisation functions
 
 #include <spin1_api.h>
+#include <arm_acle.h>
+#include "../component.h"
 #include "matrix_common_init.h"
 
 matrix_data_t *matrix_init(uint32_t index, matrix_config_t *config,
@@ -39,4 +41,49 @@ matrix_data_t *matrix_init(uint32_t index, matrix_config_t *config,
         data->in_sdram = 0;
     }
     return data;
+}
+
+void matrix_common_dma_complete(UNUSED dma_id_t id, void *data) {
+    // Get the data structure
+    matrix_data_t *matrix_data = data;
+    matrix_data->dma_in_progress = 0;
+}
+
+void matrix_transfer_row(matrix_data_t *matrix_data, uint32_t row) {
+    // If data is in DTCM, or the row is too big, do nothing
+    if (!matrix_data->in_sdram || row >= matrix_data->height) {
+        return;
+    }
+
+    // Start the DMA of the row
+    matrix_data->dma_in_progress = 1;
+    dma_id_t dma_id = {
+            .index = matrix_data->component_index,
+            .is_component = 1,
+            .is_input = 0};
+    int32_t *weights = &matrix_data->data[row * matrix_data->width];
+    uint32_t size = matrix_data->width * sizeof(int32_t);
+    spin1_dma_transfer(dma_id.id, (void *) weights,
+            matrix_data->local_data[matrix_data->write_index], DMA_READ, size);
+
+    // The next read index is the current write index
+    matrix_data->read_index = matrix_data->write_index;
+    matrix_data->write_index = (matrix_data->write_index + 1) % 2;
+}
+
+int32_t *matrix_get_row(matrix_data_t *matrix_data, uint32_t row) {
+    // If data is in DTCM, return a pointer to the row
+    if (!matrix_data->in_sdram) {
+        return &matrix_data->data[row * matrix_data->width];
+    }
+
+    // If the DMA is in progress, wait for it
+    uint32_t cspr = spin1_int_disable();
+    while (matrix_data->dma_in_progress) {
+        spin1_wfi();
+    }
+    spin1_mode_restore(cspr);
+
+    // Return where we need to read from
+    return matrix_data->local_data[matrix_data->read_index];
 }
