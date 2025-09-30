@@ -49,7 +49,7 @@ static void affine_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     uint32_t row;
     uint32_t col;
     while (matrix_loop_is_next(&loop, &value, &row, &col)) {
-        matrix_matrix_multiply(loop.data, row, col, loop.current_data, input, 
+        matrix_matrix_multiply(loop.data, row, col, loop.current_data, input,
             n_inputs, output.data);
     }
 

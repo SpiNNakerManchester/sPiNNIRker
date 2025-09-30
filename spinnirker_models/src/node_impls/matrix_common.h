@@ -14,8 +14,6 @@
 //! \file matrix_common.h
 //! \brief Common matrix functions
 
-
-
 #ifndef _MATRIX_COMMON_H_
 #define _MATRIX_COMMON_H_
 
