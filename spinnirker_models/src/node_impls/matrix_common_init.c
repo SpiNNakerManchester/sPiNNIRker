@@ -16,25 +16,40 @@
 
 #include <spin1_api.h>
 #include <arm_acle.h>
+#include <debug.h>
 #include "../component.h"
 #include "matrix_common_init.h"
 
 matrix_data_t *matrix_init(uint32_t index, matrix_config_t *config,
-        matrix_data_t *data) {
+        matrix_data_t *data, uint32_t element_size) {
     data->width = config->width;
     data->height = config->height;
+    data->element_size = element_size;
     data->dma_in_progress = 0;
     data->read_index = 0;
     data->write_index = 0;
     data->component_index = index;
 
     // Try the data in DTCM
-    uint32_t sz = data->width * data->height * sizeof(int32_t);
+    uint32_t sz = data->width * data->height * data->element_size;
     data->data = spin1_malloc(sz);
     if (!data->data) {
         // Need to keep in SDRAM
+        log_warning("Matrix component %u data too large for DTCM, "
+            "keeping in SDRAM", index);
         data->data = config->data;
         data->in_sdram = 1;
+
+        // This means we need to allocate two rows of local data for transfers
+        uint32_t row_sz = data->width * data->element_size;
+        for (uint32_t i = 0; i < 2; i++) {
+            data->local_data[i] = spin1_malloc(row_sz);
+            if (!data->local_data[i]) {
+                log_error("Failed to allocate local data %i for matrix "
+                    "component %u", i, index);
+                return NULL;
+            }
+        }
     } else {
         // Copy to DTCM
         spin1_memcpy(data->data, config->data, sz);
@@ -61,8 +76,9 @@ void matrix_transfer_row(matrix_data_t *matrix_data, uint32_t row) {
             .index = matrix_data->component_index,
             .is_component = 1,
             .is_input = 0};
-    int32_t *weights = &matrix_data->data[row * matrix_data->width];
-    uint32_t size = matrix_data->width * sizeof(int32_t);
+    uint32_t *weights = &matrix_data->data[row * matrix_data->width *
+            matrix_data->element_size];
+    uint32_t size = matrix_data->width * matrix_data->element_size;
     spin1_dma_transfer(dma_id.id, (void *) weights,
             matrix_data->local_data[matrix_data->write_index], DMA_READ, size);
 
@@ -71,10 +87,11 @@ void matrix_transfer_row(matrix_data_t *matrix_data, uint32_t row) {
     matrix_data->write_index = (matrix_data->write_index + 1) % 2;
 }
 
-int32_t *matrix_get_row(matrix_data_t *matrix_data, uint32_t row) {
+void *matrix_get_row(matrix_data_t *matrix_data, uint32_t row) {
     // If data is in DTCM, return a pointer to the row
     if (!matrix_data->in_sdram) {
-        return &matrix_data->data[row * matrix_data->width];
+        return &matrix_data->data[row * matrix_data->width *
+            matrix_data->element_size];
     }
 
     // If the DMA is in progress, wait for it

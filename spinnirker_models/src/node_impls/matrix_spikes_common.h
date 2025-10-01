@@ -56,7 +56,7 @@ typedef struct {
     uint32_t is_next;
 
     //! The current row of the matrix that has been transferred
-    int32_t *current_data;
+    void *current_data;
 
     //! The matrix data being processed
     matrix_data_t *matrix_data;
@@ -126,7 +126,7 @@ static matrix_spikes_loop_data_t matrix_spikes_loop_start(
 }
 
 static uint32_t matrix_spikes_loop_is_next(matrix_spikes_loop_data_t *loop,
-        int32_t *value, uint32_t *row, uint32_t *col) {
+        uint32_t *row, uint32_t *col) {
     if (!loop->is_next) {
         return 0;
     }
@@ -139,7 +139,6 @@ static uint32_t matrix_spikes_loop_is_next(matrix_spikes_loop_data_t *loop,
         *loop->next_transfer_row);
     *row = loop->next_row;
     *col = loop->next_col;
-    *value = loop->current_data[*loop->value_index];
     uint32_t last_transfer_row = *loop->next_transfer_row;
 
     // Get the next spike if there is one

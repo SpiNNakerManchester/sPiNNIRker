@@ -39,7 +39,8 @@ static void *spike_matrix_init(uint32_t index, void *params) {
     }
     spike_matrix_config_t *config = params;
     data->key = config->key;
-    return matrix_init(index, &config->matrix_data, &data->matrix_data);
+    return matrix_init(index, &config->matrix_data, &data->matrix_data,
+            sizeof(int32_t));
 }
 
 static void spike_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
@@ -50,10 +51,10 @@ static void spike_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
 
     matrix_loop_t loop = matrix_loop_start(thresh_data);
     int32_t *out_data = output.data;
-    int32_t value;
     uint32_t row;
     uint32_t col;
-    while (matrix_loop_is_next(&loop, &value, &row, &col)) {
+    while (matrix_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
         // Go through and sum the inputs
         int32_t acc = 0;
         uint32_t i_off = row * thresh_data->width;
@@ -61,7 +62,7 @@ static void spike_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
             int32_t *in_data = input[k].data;
             acc += in_data[i_off + col];
         }
-        uint32_t spike = acc >= value;
+        uint32_t spike = acc >= row_data[col];
         out_data[i_off + col] = spike;
         if (spike) {
             spin1_send_mc_packet(spike_data->key + i_off + col, 0, 0);

@@ -45,20 +45,21 @@ static void affine_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
 
     matrix_loop_t loop = matrix_loop_start(&affine_data->weights_data);
 
-    int32_t value;
     uint32_t row;
     uint32_t col;
-    while (matrix_loop_is_next(&loop, &value, &row, &col)) {
-        matrix_matrix_multiply(loop.data, row, col, loop.current_data, input,
+    while (matrix_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
+        matrix_matrix_multiply(loop.data, row, col, row_data, input,
             n_inputs, output.data);
     }
 
     // Now run a loop over the biases and add them in to the output
     int32_t *out_data = output.data;
     matrix_loop_t bias_loop = matrix_loop_start(&affine_data->bias_data);
-    while (matrix_loop_is_next(&bias_loop, &value, &row, &col)) {
+    while (matrix_loop_is_next(&bias_loop, &row, &col)) {
+        int32_t *row_data = bias_loop.current_data;
         uint32_t i_off = row * affine_data->bias_data.width;
-        out_data[i_off + col] += value;
+        out_data[i_off + col] += row_data[col];
     }
 }
 

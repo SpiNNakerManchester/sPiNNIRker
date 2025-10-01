@@ -45,10 +45,10 @@ typedef struct {
 
 static affine_common_data_t *affine_common_init(uint32_t index,
         affine_common_config_t *config, affine_common_data_t *data) {
-    matrix_init(index, &config->matrix, &data->weights_data);
+    matrix_init(index, &config->matrix, &data->weights_data, sizeof(int32_t));
     matrix_config_t *bias_config = (matrix_config_t *)
             (&config->matrix.data[config->matrix.width * config->matrix.height]);
-    matrix_init(index, bias_config, &data->bias_data);
+    matrix_init(index, bias_config, &data->bias_data, sizeof(int32_t));
     data->input_height = config->io_height;
     return data;
 }

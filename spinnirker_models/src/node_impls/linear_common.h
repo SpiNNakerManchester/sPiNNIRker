@@ -37,7 +37,7 @@ typedef struct {
 
 static linear_common_data_t *linear_common_init(uint32_t index,
         linear_common_config_t *config, linear_common_data_t *data) {
-    matrix_init(index, &config->matrix, &data->weights_data);
+    matrix_init(index, &config->matrix, &data->weights_data, sizeof(int32_t));
     data->input_height = config->io_height;
     return data;
 }

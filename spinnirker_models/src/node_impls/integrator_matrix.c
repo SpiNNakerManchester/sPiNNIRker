@@ -27,7 +27,7 @@ static void *integrator_matrix_init(uint32_t index, void *params) {
         log_error("Failed to allocate integrator matrix data structure");
         return (void *)0;
     }
-    return matrix_init(index, params, data);
+    return matrix_init(index, params, data, sizeof(int32_t));
 }
 
 static void integrator_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
@@ -37,10 +37,10 @@ static void integrator_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
 
     matrix_loop_t loop = matrix_loop_start(integrator_data);
     int32_t *out_data = output.data;
-    int32_t value;
     uint32_t row;
     uint32_t col;
-    while (matrix_loop_is_next(&loop, &value, &row, &col)) {
+    while (matrix_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
         // Go through and sum the inputs
         int32_t acc = 0;
         uint32_t i_off = row * integrator_data->width;
@@ -48,7 +48,7 @@ static void integrator_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
             int32_t *in_data = input[k].data;
             acc += in_data[i_off + col];
         }
-        out_data[i_off + col] += __stdfix_smul_k(acc, value);
+        out_data[i_off + col] += __stdfix_smul_k(acc, row_data[col]);
     }
 }
 

@@ -27,7 +27,7 @@ typedef struct {
     uint32_t current_col;
 
     //! The current row of the matrix that has been transferred
-    int32_t *current_data;
+    void *current_data;
 } matrix_loop_t;
 
 static matrix_loop_t matrix_loop_start(matrix_data_t *matrix) {
@@ -42,8 +42,8 @@ static matrix_loop_t matrix_loop_start(matrix_data_t *matrix) {
     return loop;
 }
 
-static uint32_t matrix_loop_is_next(matrix_loop_t *loop, int32_t *value,
-        uint32_t *row, uint32_t *col) {
+static uint32_t matrix_loop_is_next(matrix_loop_t *loop,
+    uint32_t *row, uint32_t *col) {
     // Loop complete!
     if (loop->current_row >= loop->data->height) {
         return 0;
@@ -54,13 +54,11 @@ static uint32_t matrix_loop_is_next(matrix_loop_t *loop, int32_t *value,
         // Get the current row data
         loop->current_data = matrix_get_row(loop->data, loop->current_row);
 
-
         // Start the transfer for the next row (ignored if last row)
         matrix_transfer_row(loop->data, loop->current_row + 1);
     }
 
     // Get the value
-    *value = loop->current_data[loop->current_col];
     *row = loop->current_row;
     *col = loop->current_col;
 

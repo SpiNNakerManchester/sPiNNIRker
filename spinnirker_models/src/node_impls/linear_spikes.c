@@ -71,9 +71,9 @@ static void linear_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
 
     uint32_t row;
     uint32_t col;
-    int32_t value;
-    while (matrix_spikes_loop_is_next(&loop, &value, &row, &col)) {
-        matrix_matrix_multiply(loop.matrix_data, row, col, loop.current_data,
+    while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
+        matrix_matrix_multiply(loop.matrix_data, row, col, row_data,
             input, n_inputs, output.data);
     }
 }

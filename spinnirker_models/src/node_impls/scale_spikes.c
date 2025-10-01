@@ -45,7 +45,8 @@ static void *scale_spikes_init(uint32_t index, void *params) {
         return (void *)0;
     }
     scale_spikes_config_t *spikes_config = params;
-    matrix_init(index, &spikes_config->scale_matrix, &data->scale_matrix);
+    matrix_init(index, &spikes_config->scale_matrix, &data->scale_matrix,
+            sizeof(int32_t));
     data->input_width_inv = spikes_config->input_width_inv;
     return data;
 }
@@ -65,8 +66,8 @@ static void scale_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
 
     uint32_t row;
     uint32_t col;
-    int32_t value;
-    while (matrix_spikes_loop_is_next(&loop, &value, &row, &col)) {
+    while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
         // Go through and sum the inputs
         int32_t acc = 0;
         uint32_t i_off = row * scale_data->width;
@@ -74,7 +75,7 @@ static void scale_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
             int32_t *in_data = input[k].data;
             acc += in_data[i_off + col];
         }
-        out_data[i_off + col] = __stdfix_smul_k(acc, value);
+        out_data[i_off + col] = __stdfix_smul_k(acc, row_data[col]);
     }
 }
 

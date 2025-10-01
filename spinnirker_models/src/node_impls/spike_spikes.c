@@ -49,7 +49,8 @@ static void *spike_spikes_init(uint32_t index, void *params) {
         return (void *)0;
     }
     spike_spikes_config_t *spikes_config = params;
-    matrix_init(index, &spikes_config->spike_matrix, &data->spike_matrix);
+    matrix_init(index, &spikes_config->spike_matrix, &data->spike_matrix,
+            sizeof(int32_t));
     data->input_width_inv = spikes_config->input_width_inv;
     data->key = spikes_config->key;
     return data;
@@ -70,8 +71,8 @@ static void spike_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
 
     uint32_t row;
     uint32_t col;
-    int32_t value;
-    while (matrix_spikes_loop_is_next(&loop, &value, &row, &col)) {
+    while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
         // Go through and sum the inputs
         int32_t acc = 0;
         uint32_t i_off = row * thresh_data->width;
@@ -79,7 +80,7 @@ static void spike_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
             int32_t *in_data = input[k].data;
             acc += in_data[i_off + col];
         }
-        uint32_t spike = acc >= value;
+        uint32_t spike = acc >= row_data[col];
         out_data[i_off + col] = spike;
         if (spike) {
             spin1_send_mc_packet(spike_data->key + i_off + col, 0, 0);

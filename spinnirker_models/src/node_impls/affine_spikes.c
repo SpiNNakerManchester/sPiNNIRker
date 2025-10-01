@@ -70,11 +70,11 @@ static void affine_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
             input_width, spikes_data->input_width_inv, 1, matrix_data);
 
-    int32_t value;
     uint32_t row;
     uint32_t col;
-    while (matrix_spikes_loop_is_next(&loop, &value, &row, &col)) {
-        matrix_matrix_multiply(loop.matrix_data, row, col, loop.current_data,
+    while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
+        int32_t *row_data = loop.current_data;
+        matrix_matrix_multiply(loop.matrix_data, row, col, row_data,
             input, n_inputs, output.data);
     }
 
@@ -82,9 +82,10 @@ static void affine_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     int32_t *out_data = output.data;
     matrix_loop_t bias_loop = matrix_loop_start(
         &spikes_data->base_config.bias_data);
-    while (matrix_loop_is_next(&bias_loop, &value, &row, &col)) {
+    while (matrix_loop_is_next(&bias_loop, &row, &col)) {
+        int32_t *row_data = bias_loop.current_data;
         uint32_t i_off = row * spikes_data->base_config.bias_data.width;
-        out_data[i_off + col] += value;
+        out_data[i_off + col] += row_data[col];
     }
 }
 
