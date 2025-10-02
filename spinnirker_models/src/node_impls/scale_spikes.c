@@ -58,24 +58,19 @@ static void scale_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     matrix_data_t *scale_data = &spikes_data->scale_matrix;
     int32_t *out_data = output.data;
 
+    // Clear the outputs since these should be 0 where no spike (multiply by 0)
     matrix_clear_outputs(output, scale_data->width * scale_data->height);
 
-    // Start a loop - if there are no spikes, we are done
+    // Now just set the values where there are spikes 
+    // since this is multiply by 1
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
             scale_data->width, spikes_data->input_width_inv, 0, scale_data);
-
     uint32_t row;
     uint32_t col;
     while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
         int32_t *row_data = loop.current_data;
-        // Go through and sum the inputs
-        int32_t acc = 0;
         uint32_t i_off = row * scale_data->width;
-        for (uint32_t k = 0; k < n_inputs; k++) {
-            int32_t *in_data = input[k].data;
-            acc += in_data[i_off + col];
-        }
-        out_data[i_off + col] = __stdfix_smul_k(acc, row_data[col]);
+        out_data[i_off + col] = row_data[col];
     }
 }
 

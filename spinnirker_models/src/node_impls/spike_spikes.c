@@ -63,24 +63,20 @@ static void spike_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     matrix_data_t *thresh_data = &spike_data->spike_matrix;
     int32_t *out_data = output.data;
 
+    // We reset the outputs here since where there are no spikes the output is
+    // definitely 0
     matrix_clear_outputs(output, thresh_data->width * thresh_data->height);
 
-    // Start a loop - if there are no spikes, we are done
+    // Go through each spike and see if this 1 value makes the output go over
+    // the thresold
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
             thresh_data->width, spike_data->input_width_inv, 0, thresh_data);
-
     uint32_t row;
     uint32_t col;
     while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
         int32_t *row_data = loop.current_data;
-        // Go through and sum the inputs
-        int32_t acc = 0;
         uint32_t i_off = row * thresh_data->width;
-        for (uint32_t k = 0; k < n_inputs; k++) {
-            int32_t *in_data = input[k].data;
-            acc += in_data[i_off + col];
-        }
-        uint32_t spike = acc >= row_data[col];
+        uint32_t spike = 1 >= row_data[col];
         out_data[i_off + col] = spike;
         if (spike) {
             spin1_send_mc_packet(spike_data->key + i_off + col, 0, 0);

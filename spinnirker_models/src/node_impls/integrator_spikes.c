@@ -58,24 +58,17 @@ static void integrator_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     matrix_data_t *integrator_data = &spikes_data->integrator_matrix;
     int32_t *out_data = output.data;
 
-    matrix_clear_outputs(output, integrator_data->width * integrator_data->height);
-
-    // Start a loop - if there are no spikes, we are done
+    // For each spike, add the corresponding row of the matrix to the output,
+    // since this is the input value of 1 multiplied by the resistance
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
-            integrator_data->width, spikes_data->input_width_inv, 0, integrator_data);
-
+            integrator_data->width, spikes_data->input_width_inv, 0,
+            integrator_data);
     uint32_t row;
     uint32_t col;
     while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
         int32_t *row_data = loop.current_data;
-        // Go through and sum the inputs
-        int32_t acc = 0;
         uint32_t i_off = row * integrator_data->width;
-        for (uint32_t k = 0; k < n_inputs; k++) {
-            int32_t *in_data = input[k].data;
-            acc += in_data[i_off + col];
-        }
-        out_data[i_off + col] += __stdfix_smul_k(acc, row_data[col]);
+        out_data[i_off + col] += row_data[col];
     }
 }
 
