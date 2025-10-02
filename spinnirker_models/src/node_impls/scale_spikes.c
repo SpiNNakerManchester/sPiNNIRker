@@ -61,7 +61,7 @@ static void scale_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     // Clear the outputs since these should be 0 where no spike (multiply by 0)
     matrix_clear_outputs(output, scale_data->width * scale_data->height);
 
-    // Now just set the values where there are spikes 
+    // Now just set the values where there are spikes
     // since this is multiply by 1
     matrix_spikes_loop_data_t loop = matrix_spikes_loop_start(input, n_inputs,
             scale_data->width, spikes_data->input_width_inv, 0, scale_data);
