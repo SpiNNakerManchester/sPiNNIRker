@@ -11,12 +11,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-//! \file leaky_integrator_common.h
-//! \brief leaky_integrator NIR component common code
+//! \file decay.h
+//! \brief decay common code
 #include <stdfix-full-iso.h>
-#include "decay.h"
 
-typedef struct {
-    int32_t decay;       //!< The decay factor - signed long fract
-    int32_t resistance;  //!< The resistance factor - signed long accum
-} leaky_integrator_item_t;
+static inline int32_t decay(int32_t s1615_value, uint32_t decay) {
+    return __stdfix_sat_k((__I64(s1615_value) * __U64(decay)) >> 32);
+}
