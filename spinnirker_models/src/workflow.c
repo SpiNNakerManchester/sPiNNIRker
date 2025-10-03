@@ -35,6 +35,8 @@
 #include "node_impls/integrator_spikes.h"
 #include "node_impls/leaky_integrator_matrix.h"
 #include "node_impls/leaky_integrator_spikes.h"
+#include "node_impls/integrate_and_fire_matrix.h"
+#include "node_impls/integrate_and_fire_spikes.h"
 #include "node_impls/leaky_integrate_and_fire_matrix.h"
 #include "node_impls/leaky_integrate_and_fire_spikes.h"
 
@@ -55,10 +57,12 @@ static const component_t *COMPONENTS[] = {
         &integrator_spikes,
         &leaky_integrator_matrix,
         &leaky_integrator_spikes,
+        &integrate_and_fire_matrix,
+        &integrate_and_fire_spikes,
         &leaky_integrate_and_fire_matrix,
         &leaky_integrate_and_fire_spikes,
 };
-#define N_COMPONENTS 17
+#define N_COMPONENTS 19
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure
