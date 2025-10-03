@@ -35,6 +35,8 @@
 #include "node_impls/integrator_spikes.h"
 #include "node_impls/leaky_integrator_matrix.h"
 #include "node_impls/leaky_integrator_spikes.h"
+#include "node_impls/leaky_integrate_and_fire_matrix.h"
+#include "node_impls/leaky_integrate_and_fire_spikes.h"
 
 //! A list of components that can be used in a workflow
 static const component_t *COMPONENTS[] = {
@@ -52,9 +54,11 @@ static const component_t *COMPONENTS[] = {
         &integrator_matrix,
         &integrator_spikes,
         &leaky_integrator_matrix,
-        &leaky_integrator_spikes
+        &leaky_integrator_spikes,
+        &leaky_integrate_and_fire_matrix,
+        &leaky_integrate_and_fire_spikes,
 };
-#define N_COMPONENTS 14
+#define N_COMPONENTS 17
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure
@@ -168,6 +172,14 @@ static bool setup_components(uint32_t n_components,
 
         // Set the type of the output now too
         components[i].output.type = configs[i]->output_type;
+
+        // If the output is spikes, set up the spike list structure
+        if (components[i].output.type == DATA_TYPE_SPIKES) {
+            spike_list_t *spikes = components[i].output.data;
+            spikes->n_spikes = 0;
+            // Take space of 2 for count and max_spikes
+            spikes->max_spikes = configs[i]->output_size - 2;
+        }
     }
     return true;
 }
@@ -239,7 +251,8 @@ static bool setup_spike_inputs(uint32_t n_spike_inputs,
                     false, DATA_TYPE_SPIKES)) {
             return false;
         }
-        input->max_spikes = config->max_spikes;
+        input->spikes->n_spikes = 0;
+        input->spikes->max_spikes = config->max_spikes;
         input->n_spikes_delay_lost = 0;
         input->n_spikes_overflow_lost = 0;
         input->n_spikes_received = 0;
@@ -490,7 +503,7 @@ bool process_packet(uint32_t time, uint32_t key, workflow_t *workflow) {
         spike_input_t *input = &workflow->spike_inputs[i];
         spike_t spike;
         if (spike_matches(time, key, input, &spike)) {
-            if (input->spikes->n_spikes >= input->max_spikes) {
+            if (input->spikes->n_spikes >= input->spikes->max_spikes) {
                 // If the spike input is full, ignore the spike
                 input->n_spikes_overflow_lost++;
             } else {

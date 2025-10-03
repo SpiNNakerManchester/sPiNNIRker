@@ -28,6 +28,8 @@ typedef struct {
 } spike_t;
 
 typedef struct {
+    //! The maximum number of spikes that can be stored in the list
+    uint32_t max_spikes;
     //! The number of spikes in the list
     uint32_t n_spikes;
     //! The spikes in the list

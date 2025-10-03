@@ -40,8 +40,6 @@ typedef struct {
 typedef struct {
     //! Information about the key and mask for the spike input
     key_info_t key_info;
-    //! The maximum number of spikes to allow in the input
-    uint32_t max_spikes;
     //! The location where the spikes are stored
     spike_list_t *spikes;
     //! The number of spikes lost to overflow

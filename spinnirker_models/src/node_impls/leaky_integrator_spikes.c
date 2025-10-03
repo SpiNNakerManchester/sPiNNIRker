@@ -23,7 +23,7 @@
 #include "leaky_integrator_spikes.h"
 #include "matrix_spikes_common.h"
 #include "matrix_matrix_common.h"
-#include "leaky_integrator_common.h"
+#include "decay.h"
 
 typedef struct {
     //! 1/the width of the input (to do division by)

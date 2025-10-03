@@ -20,8 +20,12 @@
 #include <debug.h>
 #include "leaky_integrator_matrix.h"
 #include "matrix_matrix_common.h"
-#include "leaky_integrator_common.h"
+#include "decay.h"
 
+typedef struct {
+    uint32_t decay;      //!< The decay factor - unsigned long fract
+    int32_t resistance;  //!< The resistance factor - signed long accum
+} leaky_integrator_item_t;
 
 static void *leaky_integrator_matrix_init(uint32_t index, void *params) {
     matrix_data_t *data = spin1_malloc(sizeof(matrix_data_t));

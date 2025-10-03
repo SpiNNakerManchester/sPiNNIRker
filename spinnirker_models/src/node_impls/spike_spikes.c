@@ -20,7 +20,7 @@
 #include <debug.h>
 #include "spike_spikes.h"
 #include "matrix_spikes_common.h"
-#include "matrix_clear.h"
+#include "spike_output_common.h"
 
 typedef struct {
     //! 1/the width of the input (to do division by)
@@ -61,11 +61,8 @@ static void spike_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     // Get the data structure
     spike_spikes_data_t *spike_data = data;
     matrix_data_t *thresh_data = &spike_data->spike_matrix;
-    int32_t *out_data = output.data;
-
-    // We reset the outputs here since where there are no spikes the output is
-    // definitely 0
-    matrix_clear_outputs(output, thresh_data->width * thresh_data->height);
+    spike_list_t *out_data = output.data;
+    out_data->n_spikes = 0;
 
     // Go through each spike and see if this 1 value makes the output go over
     // the thresold
@@ -76,10 +73,9 @@ static void spike_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
     while (matrix_spikes_loop_is_next(&loop, &row, &col)) {
         int32_t *row_data = loop.current_data;
         uint32_t i_off = row * thresh_data->width;
-        uint32_t spike = 1 >= row_data[col];
-        out_data[i_off + col] = spike;
-        if (spike) {
-            spin1_send_mc_packet(spike_data->key + i_off + col, 0, 0);
+        uint32_t is_spike = 1 >= row_data[col];
+        if (is_spike) {
+            spike(out_data, spike_data->key, i_off + col);
         }
     }
 }

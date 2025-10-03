@@ -20,6 +20,7 @@
 #include <debug.h>
 #include "spike_matrix.h"
 #include "matrix_matrix_common.h"
+#include "spike_output_common.h"
 
 typedef struct {
     uint32_t key;
@@ -50,7 +51,8 @@ static void spike_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     matrix_data_t *thresh_data = &spike_data->matrix_data;
 
     matrix_loop_t loop = matrix_loop_start(thresh_data);
-    int32_t *out_data = output.data;
+    spike_list_t *out_data = output.data;
+    out_data->n_spikes = 0;
     uint32_t row;
     uint32_t col;
     while (matrix_loop_is_next(&loop, &row, &col)) {
@@ -62,10 +64,9 @@ static void spike_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
             int32_t *in_data = input[k].data;
             acc += in_data[i_off + col];
         }
-        uint32_t spike = acc >= row_data[col];
-        out_data[i_off + col] = spike;
-        if (spike) {
-            spin1_send_mc_packet(spike_data->key + i_off + col, 0, 0);
+        uint32_t is_spike = acc >= row_data[col];
+        if (is_spike) {
+            spike(out_data, spike_data->key + i_off + col, 0);
         }
     }
 }
