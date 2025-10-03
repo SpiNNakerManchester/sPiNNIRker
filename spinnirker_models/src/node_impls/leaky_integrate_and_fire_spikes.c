@@ -64,7 +64,6 @@ static void *leaky_integrate_and_fire_spikes_init(uint32_t index, void *params) 
         (leaky_integrate_and_fire_spikes_item_t *) matrix_data->data;
     for (uint32_t i = 0; i < matrix_data->width * matrix_data->height; i++) {
         items[i].last_time = 0;
-        items[i].voltage = items[i].reset;
     }
     return data;
 }
