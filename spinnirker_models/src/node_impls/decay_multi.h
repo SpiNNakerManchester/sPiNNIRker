@@ -21,12 +21,12 @@ static inline int32_t decay_multi(int32_t s1615_value, uint32_t decay_val,
     uint32_t result = 1;
     uint32_t next_decay = decay_val;
     uint32_t step = n_steps;
-    while (n_steps > 0) {
-        if (n_steps & 1) {
+    while (step > 0) {
+        if (step & 1) {
             result = __stdfix_smul_ulr(result, next_decay);
         }
-        n_steps >>= 1;
-        if (n_steps > 0) {
+        step >>= 1;
+        if (step > 0) {
             next_decay = __stdfix_smul_ulr(next_decay, next_decay);
         }
     }
