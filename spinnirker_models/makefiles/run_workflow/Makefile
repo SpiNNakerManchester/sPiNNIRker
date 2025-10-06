@@ -15,6 +15,7 @@
 APP = run_workflow
 SOURCES = workflow.c main.c \
 	node_impls/matrix_common_init.c \
+	node_impls/matrix_matrix_common.c node_impls/matrix_spikes_common.c \
 	node_impls/input.c \
 	node_impls/output_matrix.c node_impls/output_spikes.c \
 	node_impls/linear_matrix.c node_impls/linear_spikes.c \
@@ -24,5 +25,7 @@ SOURCES = workflow.c main.c \
 	node_impls/integrator_matrix.c node_impls/integrator_spikes.c \
 	node_impls/leaky_integrator_matrix.c node_impls/leaky_integrator_spikes.c \
 	node_impls/integrate_and_fire_matrix.c node_impls/integrate_and_fire_spikes.c \
-	node_impls/leaky_integrate_and_fire_matrix.c node_impls/leaky_integrate_and_fire_spikes.c
+	node_impls/leaky_integrate_and_fire_matrix.c node_impls/leaky_integrate_and_fire_spikes.c \
+	node_impls/current_based_leaky_integrator_matrix.c node_impls/current_based_leaky_integrator_spikes.c
+
 include ../support.mk
