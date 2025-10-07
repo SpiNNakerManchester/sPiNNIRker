@@ -57,7 +57,8 @@ typedef struct {
     matrix_data_t matrix;
 } cuba_lif_spikes_data_t;
 
-static void *current_based_leaky_integrate_and_fire_spikes_init(uint32_t index, void *params) {
+static void *current_based_leaky_integrate_and_fire_spikes_init(uint32_t index,
+        void *params) {
     cuba_lif_spikes_data_t *data = spin1_malloc(
             sizeof(cuba_lif_spikes_data_t));
     if (!data) {
@@ -71,8 +72,8 @@ static void *current_based_leaky_integrate_and_fire_spikes_init(uint32_t index, 
     return data;
 }
 
-static void current_based_leaky_integrate_and_fire_spikes_exec(void *data, uint32_t n_inputs, data_t *input,
-        data_t output) {
+static void current_based_leaky_integrate_and_fire_spikes_exec(void *data,
+        uint32_t n_inputs, data_t *input, data_t output) {
     // Get the data structure
     cuba_lif_spikes_data_t *spikes_data = data;
     matrix_data_t *lif_data = &spikes_data->matrix;

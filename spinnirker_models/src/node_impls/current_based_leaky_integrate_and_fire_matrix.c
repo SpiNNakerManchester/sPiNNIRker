@@ -50,7 +50,8 @@ typedef struct {
     uint32_t key;
 } cuba_lif_data_t;
 
-static void *current_based_leaky_integrate_and_fire_matrix_init(uint32_t index, void *params) {
+static void *current_based_leaky_integrate_and_fire_matrix_init(uint32_t index, 
+        void *params) {
     cuba_lif_data_t *data = spin1_malloc(sizeof(cuba_lif_data_t));
     if (!data) {
         log_error("Failed to allocate leaky_integrator matrix data structure");
@@ -62,8 +63,8 @@ static void *current_based_leaky_integrate_and_fire_matrix_init(uint32_t index, 
     return data;
 }
 
-static void current_based_leaky_integrate_and_fire_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
-        data_t output) {
+static void current_based_leaky_integrate_and_fire_matrix_exec(void *data,
+        uint32_t n_inputs, data_t *input, data_t output) {
     // Get the data structure
     cuba_lif_data_t *cuba_lif_data = data;
 
