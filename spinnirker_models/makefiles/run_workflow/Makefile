@@ -16,7 +16,7 @@ APP = run_workflow
 SOURCES = workflow.c main.c \
 	node_impls/matrix_common_init.c \
 	node_impls/matrix_matrix_common.c node_impls/matrix_spikes_common.c \
-	node_impls/input.c \
+	node_impls/input.c node_impls/delay.c \
 	node_impls/output_matrix.c node_impls/output_spikes.c \
 	node_impls/linear_matrix.c node_impls/linear_spikes.c \
 	node_impls/affine_matrix.c node_impls/affine_spikes.c \
