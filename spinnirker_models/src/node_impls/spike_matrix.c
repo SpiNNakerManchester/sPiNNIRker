@@ -40,8 +40,9 @@ static void *spike_matrix_init(uint32_t index, void *params) {
     }
     spike_matrix_config_t *config = params;
     data->key = config->key;
-    return matrix_init(index, &config->matrix_data, &data->matrix_data,
+    matrix_init(index, &config->matrix_data, &data->matrix_data,
             sizeof(int32_t));
+    return data;
 }
 
 static void spike_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
