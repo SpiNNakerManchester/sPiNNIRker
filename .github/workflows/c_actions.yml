@@ -69,21 +69,21 @@ jobs:
       working-directory: spinnirker_models
 
     - name: Upload Fec binaries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: fec_binaries
         path: SpiNNFrontEndCommon/spinn_front_end_common/common_model_binaries/*.aplx
         retention-days: 5
 
     - name: Upload SpiNNIRker binaries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: spinnirker_binaries
         path: spinnirker/model_binaries/*.aplx
         retention-days: 5
 
     - name: Upload log.sqlite3s
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: logs.sqlite3
         path: logs.sqlite3
