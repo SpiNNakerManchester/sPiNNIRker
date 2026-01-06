@@ -27,5 +27,6 @@ SOURCES = workflow.c main.c \
 	node_impls/integrate_and_fire_matrix.c node_impls/integrate_and_fire_spikes.c \
 	node_impls/leaky_integrate_and_fire_matrix.c node_impls/leaky_integrate_and_fire_spikes.c \
 	node_impls/current_based_leaky_integrator_matrix.c node_impls/current_based_leaky_integrator_spikes.c \
-	node_impls/current_based_leaky_integrate_and_fire_matrix.c node_impls/current_based_leaky_integrate_and_fire_spikes.c
+	node_impls/current_based_leaky_integrate_and_fire_matrix.c node_impls/current_based_leaky_integrate_and_fire_spikes.c \
+	node_impls/conv1d_matrix.c # node_impls/conv1d_spikes.c
 include ../support.mk

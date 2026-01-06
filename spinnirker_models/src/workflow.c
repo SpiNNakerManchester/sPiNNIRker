@@ -44,6 +44,7 @@
 #include "node_impls/current_based_leaky_integrate_and_fire_matrix.h"
 #include "node_impls/current_based_leaky_integrate_and_fire_spikes.h"
 #include "node_impls/delay.h"
+#include "node_impls/conv1d_matrix.h"
 
 //! A list of components that can be used in a workflow
 static const component_t *COMPONENTS[] = {
@@ -71,8 +72,9 @@ static const component_t *COMPONENTS[] = {
         &current_based_leaky_integrate_and_fire_matrix,
         &current_based_leaky_integrate_and_fire_spikes,
         &delay_component,
+        &conv1d_matrix
 };
-#define N_COMPONENTS 24
+#define N_COMPONENTS 25
 
 static bool init_workflow(workflow_config_t *config, workflow_t **workflow) {
     // Set up the workflow structure
