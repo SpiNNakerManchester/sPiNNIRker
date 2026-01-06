@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# If SPINN_DIRS is not defined, this is an error!
-ifndef SPINN_DIRS
-    $(error SPINN_DIRS is not set.  Please define SPINN_DIRS (possibly by running "source setup" in the spinnaker package folder))
-endif
-MAKEFILE_PATH := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-
-# APP name for a and dict files
-ifndef APP
-    $(error APP is not set.  Please define APP)
-endif
+# If FEC_INSTALL_DIR is not defined, this is an error!
+FEC_INSTALL_DIR := $(strip $(if $(FEC_INSTALL_DIR), $(FEC_INSTALL_DIR), $(if $(SPINN_DIRS), $(SPINN_DIRS)/fec_install, $(error FEC_INSTALL_DIR or SPINN_DIRS is not set.  Please define FEC_INSTALL_DIR or SPINN_DIRS))))
 
 # Define the directories
-SRC_DIR := $(abspath $(MAKEFILE_PATH)/../src/)
-SOURCE_DIRS += $(SRC_DIR)
-MODIFIED_DIR := $(abspath $(MAKEFILE_PATH)/../modified_src/)
-BUILD_DIR := $(abspath $(MAKEFILE_PATH)/../builds/$(APP)/)
-APP_OUTPUT_DIR := $(abspath $(MAKEFILE_PATH)/../../spinnirker/model_binaries/)
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+MODELS_DIR := $(abspath $(dir $(MAKEFILE_PATH))/../)/
+SPINNIRKER_DIR := $(abspath $(dir $(MAKEFILE_PATH))/../../)/
 
-include $(SPINN_DIRS)/make/local.mk
+SRC_DIR := $(MODELS_DIR)src/
+MODIFIED_DIR := $(MODELS_DIR)modified_src/
+SOURCE_DIRS += $(SRC_DIR):$(MODIFIED_DIR)
+BUILD_DIR := $(MODELS_DIR)builds/$(APP)/
+APP_OUTPUT_DIR := $(SPINNIRKER_DIR)spinnirker/model_binaries/
 
+include $(FEC_INSTALL_DIR)/make/fec.mk
