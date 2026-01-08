@@ -33,7 +33,9 @@ jobs:
 
     - name: Set environment variables
       run: |
-        echo "SPINN_DIRS=$PWD/spinnaker_tools" >> $GITHUB_ENV
+        echo "SPINN_INSTALL_DIR=${GITHUB_WORKSPACE}/spinnaker_tools_install" >> $GITHUB_ENV
+        echo "SPINN_COMMON_INSTALL_DIR=${GITHUB_WORKSPACE}/spinn_common_install" >> $GITHUB_ENV
+        echo "FEC_INSTALL_DIR=${GITHUB_WORKSPACE}/fec_install" >> $GITHUB_ENV
 
     - name: Lint C code using Vera++
       uses: SpiNNakerManchester/SupportScripts/actions/vera@main
@@ -46,7 +48,7 @@ jobs:
         make -C spinn_common install
 
     - name: Build FEC C code
-      run: make
+      run: make install
       working-directory: SpiNNFrontEndCommon/c_common
       env:
         CFLAGS: -fdiagnostics-color=always
@@ -71,21 +73,18 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: fec_binaries
-        path: SpiNNFrontEndCommon/spinn_front_end_common/common_model_binaries/*.aplx
+        path: | 
+          SpiNNFrontEndCommon/spinn_front_end_common/common_model_binaries/*.aplx
+          SpiNNFrontEndCommon/spinn_front_end_common/common_model_binaries/logs*.sqlite3
         retention-days: 5
 
     - name: Upload SpiNNIRker binaries
       uses: actions/upload-artifact@v4
       with:
         name: spinnirker_binaries
-        path: spinnirker/model_binaries/*.aplx
-        retention-days: 5
-
-    - name: Upload log.sqlite3s
-      uses: actions/upload-artifact@v4
-      with:
-        name: logs.sqlite3
-        path: logs.sqlite3
+        path: | 
+          spinnirker/model_binaries/*.aplx
+          spinnirker/model_binaries/logs*.sqlite3
         retention-days: 5
 
   test:
@@ -119,12 +118,6 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: spinnirker_binaries
-        path: external_binaries
-
-    - name: Download logs.sqlite3
-      uses: actions/download-artifact@v4
-      with:
-        name: logs.sqlite3
         path: external_binaries
 
     - name: Append cfg
