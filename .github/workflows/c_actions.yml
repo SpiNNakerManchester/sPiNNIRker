@@ -33,7 +33,7 @@ jobs:
 
     - name: Set environment variables
       run: |
-        echo "SPINN_DIRS=$PWD/spinnaker_tools" >> $GITHUB_ENV
+        echo "SPINN_DIRS=$PWD/spinnaker_tools_install" >> $GITHUB_ENV
         echo "C_LOGS_DICT=$PWD/logs.sqlite3" >> $GITHUB_ENV
 
     - name: Lint C code using Vera++
@@ -43,14 +43,9 @@ jobs:
 
     - name: Build C dependencies
       run: |
-        make -C $SPINN_DIRS
+        make -C spinnaker_tools install
         make -C spinn_common install
-
-    - name: Build FEC C code
-      run: make
-      working-directory: SpiNNFrontEndCommon/c_common
-      env:
-        CFLAGS: -fdiagnostics-color=always
+        make -C SpiNNFrontEndCommon/c_common
 
     - name: Build SpiNNIRker C code
       run: make
