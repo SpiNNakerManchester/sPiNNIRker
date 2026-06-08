@@ -1,2 +1,3 @@
 *.aplx
 *.dict
+/logsN.sqlite3
