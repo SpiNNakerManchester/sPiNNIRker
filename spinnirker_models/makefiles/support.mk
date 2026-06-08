@@ -29,3 +29,6 @@ APP_OUTPUT_DIR := $(SPINNIRKER_DIR)spinnirker/model_binaries/
 DATABASE_KEY = N
 
 include $(FEC_INSTALL_DIR)/make/fec.mk
+
+clean:
+	$(RM) -r $(BUILD_DIR)
