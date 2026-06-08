@@ -32,7 +32,7 @@ typedef struct {
     // The size of each group of the output
     uint32_t output_size;
     // Half the size of each group of the weights (-1)
-    uint32_t half_conv_size;
+    int32_t half_conv_size;
     // The stride to move the weights over the input
     uint32_t stride;
     // 1 / the stride to move the weights over the input (s1615)
