@@ -115,7 +115,7 @@ static void conv2d_matrix_exec(void *data, uint32_t n_inputs, data_t *input,
     }
 }
 
-const component_t conv1d_matrix = {
+const component_t conv2d_matrix = {
     .init = conv2d_data_init,
     .func = conv2d_matrix_exec,
     .dma_complete = NULL
