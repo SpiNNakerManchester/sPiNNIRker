@@ -20,8 +20,8 @@ MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MODELS_DIR := $(abspath $(dir $(MAKEFILE_PATH))/../)/
 SPINNIRKER_DIR := $(abspath $(dir $(MAKEFILE_PATH))/../../)/
 
-SRC_DIR := $(MODELS_DIR)src/
-MODIFIED_DIR := $(MODELS_DIR)modified_src/
+SRC_DIR := $(MODELS_DIR)src
+MODIFIED_DIR := $(MODELS_DIR)modified_src
 SOURCE_DIRS += $(SRC_DIR):$(MODIFIED_DIR)
 BUILD_DIR := $(MODELS_DIR)builds/$(APP)/
 APP_OUTPUT_DIR := $(SPINNIRKER_DIR)spinnirker/model_binaries/
@@ -31,4 +31,4 @@ DATABASE_KEY = N
 include $(FEC_INSTALL_DIR)/make/fec.mk
 
 clean:
-	$(RM) -r $(BUILD_DIR)
+	$(RM) -r $(BUILD_DIR) $(MODIFIED_DIR)
