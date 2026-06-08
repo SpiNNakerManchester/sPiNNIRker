@@ -79,7 +79,7 @@ typedef struct {
 
 extern void *conv1d_data_init(UNUSED uint32_t index, void *params);
 
-extern uint32_t is_output(uint32_t input_i, int32_t kernel_i,
+extern uint32_t is_conv_1d_output(uint32_t input_i, int32_t kernel_i,
         conv1d_data_t *conv1d_data, uint32_t *output);
 
 #endif // CONV1D_COMMON_H

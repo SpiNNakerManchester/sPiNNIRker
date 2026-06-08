@@ -45,7 +45,7 @@ void *conv1d_data_init(UNUSED uint32_t index, void *params) {
     return data;
 }
 
-uint32_t is_output(uint32_t input_i, int32_t kernel_i,
+uint32_t is_conv_1d_output(uint32_t input_i, int32_t kernel_i,
         conv1d_data_t *conv1d_data, uint32_t *output) {
     int32_t dividend =
         (input_i - (conv1d_data->half_conv_size * conv1d_data->dilation)
