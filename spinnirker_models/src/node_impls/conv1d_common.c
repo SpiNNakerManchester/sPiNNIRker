@@ -16,7 +16,7 @@
 
 #include "conv1d_common.h"
 
-conv1d_data_t *conv1d_data_init(UNUSED uint32_t index, void *params) {
+void *conv1d_data_init(UNUSED uint32_t index, void *params) {
     conv1d_data_t *data = spin1_malloc(sizeof(conv1d_data_t));
     if (!data) {
         log_error("Failed to allocate conv1d_data structure");

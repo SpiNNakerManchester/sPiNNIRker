@@ -32,7 +32,7 @@ typedef struct {
     // The size of each group of the output
     uint32_t output_size;
     // Half the size of each group of the weights (-1)
-    int32_t half_conv_size;
+    uint32_t half_conv_size;
     // The stride to move the weights over the input
     uint32_t stride;
     // 1 / the stride to move the weights over the input (s1615)
@@ -77,7 +77,7 @@ typedef struct {
     uint32_t *weights;
 } conv1d_data_t;
 
-extern conv1d_data_t *conv1d_data_init(UNUSED uint32_t index, void *params);
+extern void *conv1d_data_init(UNUSED uint32_t index, void *params);
 
 extern uint32_t is_output(uint32_t input_i, int32_t kernel_i,
         conv1d_data_t *conv1d_data, uint32_t *output);
