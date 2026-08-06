@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from nir import NIRGraph, LI, Threshold
-from spinnirker import get_node_connection_maps, split_graph, SubGraph
+from nir import LI, NIRGraph, Threshold
 from numpy import array
+
+from spinnirker import SubGraph, get_node_connection_maps, split_graph
 
 
 def test_split_graph() -> None:

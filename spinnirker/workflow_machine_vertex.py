@@ -16,19 +16,21 @@ from nir import NIRGraph
 
 from spinn_utilities.overrides import overrides
 
-from pacman.model.graphs.machine import MachineVertex
+from spinnman.model.enums import ExecutableType
+
 from pacman.model.graphs.common import Slice
+from pacman.model.graphs.machine import MachineVertex
 from pacman.model.placements import Placement
 from pacman.model.resources import AbstractSDRAM
 
-from spinnman.model.enums import ExecutableType
-
 from spinn_front_end_common.abstract_models import (
-    AbstractHasAssociatedBinary, AbstractGeneratesDataSpecification)
+    AbstractGeneratesDataSpecification,
+    AbstractHasAssociatedBinary,
+)
 from spinn_front_end_common.interface.ds import DataSpecificationGenerator
 
-from .workflow_application_vertex import WorkflowApplicationVertex
 from .subgraph import SubGraph
+from .workflow_application_vertex import WorkflowApplicationVertex
 
 
 class WorkflowMachineVertex(

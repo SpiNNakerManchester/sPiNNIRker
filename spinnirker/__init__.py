@@ -11,13 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from spinnirker._version import (
+    __version__,  # NOQA
+    __version_month__,  # NOQA
+    __version_name__,  # NOQA
+    __version_year__,  # NOQA
+)
 from spinnirker.partition import (
-    SubGraph, get_node_connection_maps, split_graph)
-
-from spinnirker._version import __version__  # NOQA
-from spinnirker._version import __version_name__  # NOQA
-from spinnirker._version import __version_month__  # NOQA
-from spinnirker._version import __version_year__  # NOQA
+    SubGraph,
+    get_node_connection_maps,
+    split_graph,
+)
 
 __all__ = [
     "SubGraph",
