@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections import defaultdict
+from typing import Dict, List, Tuple, Type
 
-from typing import List, Tuple, Dict, Type
+from nir import IF, LIF, CubaLIF, NIRGraph, NIRNode, Threshold
 
 from spinn_utilities.ordered_set import OrderedSet
-
-from nir import NIRGraph, NIRNode, LIF, IF, CubaLIF, Threshold
 
 from .subgraph import SubGraph
 
