@@ -29,4 +29,5 @@ jobs:
       flake8-packages: spinnirker unittests spinnirker_integration_tests
       pylint-packages: spinnirker
       mypy-full-packages: spinnirker unittests spinnirker_integration_tests
+      ruff-packages: spinnirker unittests spinnirker_integration_tests
       cfg-file: spinnirker
